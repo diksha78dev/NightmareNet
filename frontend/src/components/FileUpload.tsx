@@ -167,6 +167,16 @@ export default function FileUpload() {
                 ))}
               </div>
 
+              <p className="text-xs text-muted px-4 pt-2 border-b border-white/[0.04] pb-3">
+                For an E2E training run, open{" "}
+                <a href="#pipeline" className="text-neural hover:underline cursor-pointer">
+                  Pipeline
+                </a>
+                , choose <span className="text-text">Paste text</span>, and paste this file&apos;s
+                contents (the API uses <span className="font-mono text-[10px]">source_type: &quot;text&quot;</span>
+                ).
+              </p>
+
               {/* Preview */}
               <div className="p-4">
                 <div className="terminal">

@@ -13,6 +13,7 @@ import {
   Menu,
   X,
   Code2,
+  Workflow,
 } from "lucide-react";
 
 const navItems = [
@@ -22,6 +23,7 @@ const navItems = [
   { label: "Playground", href: "#playground", icon: Zap },
   { label: "Resilience", href: "#resilience", icon: Shield },
   { label: "Training", href: "#training", icon: Settings2 },
+  { label: "Pipeline", href: "#pipeline", icon: Workflow },
   { label: "Status", href: "#status", icon: Activity },
 ];
 

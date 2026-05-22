@@ -337,6 +337,7 @@ body {
     #818cf8
   );
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
   animation: gradient-shift 4s linear infinite;
@@ -368,21 +369,6 @@ body {
     radial-gradient(ellipse 600px 300px at 15% 50%, rgba(129, 140, 248, 0.05) 0%, transparent 70%),
     radial-gradient(ellipse 500px 400px at 85% 30%, rgba(34, 211, 238, 0.04) 0%, transparent 70%),
     radial-gradient(ellipse 400px 300px at 50% 80%, rgba(248, 113, 113, 0.03) 0%, transparent 70%);
-}
-
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-/*             SECTION DIVIDERS                  */
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-.section-glow-line {
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(34, 211, 238, 0.2) 20%,
-    rgba(129, 140, 248, 0.3) 50%,
-    rgba(34, 211, 238, 0.2) 80%,
-    transparent 100%
-  );
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */

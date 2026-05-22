@@ -43,7 +43,7 @@ export default function AutoPipeline() {
   const stepIdx = STEPS.findIndex((s) => s.id === selected);
 
   return (
-    <section id="pipeline" className="relative py-28 px-6">
+    <section id="pipeline-architecture" className="relative py-28 px-6">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <motion.div

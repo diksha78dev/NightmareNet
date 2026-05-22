@@ -1,4 +1,19 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+/**
+ * API origin for browser/SSR fetches.
+ * - If `NEXT_PUBLIC_API_URL` is set, it wins (e.g. split domains or e2e).
+ * - Otherwise in the browser we use same-origin `/api/...` so `next.config` rewrites
+ *   can proxy to the Python backend. Non-browser falls back to localhost for tests/SSR.
+ */
+export function getApiBase(): string {
+  const fromEnv = process.env.NEXT_PUBLIC_API_URL;
+  if (typeof fromEnv === "string" && fromEnv.length > 0) {
+    return fromEnv.replace(/\/$/, "");
+  }
+  if (typeof window !== "undefined") {
+    return "";
+  }
+  return "http://127.0.0.1:8000";
+}
 
 export interface DistortionRequest {
   text: string;
@@ -110,7 +125,7 @@ export interface CompareResponse {
 }
 
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await fetch(`${getApiBase()}${path}`, {
     ...options,
     headers: {
       "Content-Type": "application/json",
@@ -168,7 +183,7 @@ export function compareDistortions(req: CompareRequest): Promise<CompareResponse
 export async function uploadTextFile(file: File): Promise<UploadResponse> {
   const formData = new FormData();
   formData.append("file", file);
-  const res = await fetch(`${API_BASE}/api/v1/upload/text`, {
+  const res = await fetch(`${getApiBase()}/api/v1/upload/text`, {
     method: "POST",
     body: formData,
   });
@@ -201,3 +216,78 @@ export function runDemo(req: DemoRequest): Promise<DemoResponse> {
   });
 }
 
+// --- Pipeline ---
+
+export interface PipelineCreateRequest {
+  source_type: "urls" | "huggingface" | "text";
+  urls?: string[];
+  hf_dataset?: string;
+  hf_subset?: string;
+  text_content?: string;
+  model_name?: string;
+  model_type?: string;
+  num_cycles?: number;
+  wake_epochs?: number;
+  dream_epochs?: number;
+  nightmare_epochs?: number;
+  learning_rate?: number;
+  batch_size?: number;
+  max_samples?: number;
+  dream_strength?: number;
+  nightmare_strength?: number;
+}
+
+export interface PipelineStatusResponse {
+  run_id: string;
+  status: string;
+  current_cycle: number;
+  total_cycles: number;
+  current_phase: string;
+  phase_loss: number;
+  progress_pct: number;
+  eta_seconds: number;
+  is_running: boolean;
+  error: string | null;
+  has_report: boolean;
+  history: Record<string, unknown>[];
+}
+
+export interface PipelineReportResponse {
+  run_id: string;
+  report_md: string;
+  comparison: Record<string, unknown> | null;
+}
+
+export function createPipeline(
+  req: PipelineCreateRequest,
+): Promise<PipelineStatusResponse> {
+  return apiFetch<PipelineStatusResponse>("/api/v1/pipeline/create", {
+    method: "POST",
+    body: JSON.stringify(req),
+  });
+}
+
+export function getPipelineStatus(
+  runId: string,
+): Promise<PipelineStatusResponse> {
+  return apiFetch<PipelineStatusResponse>(
+    `/api/v1/pipeline/${runId}/status`,
+  );
+}
+
+export function cancelPipeline(
+  runId: string,
+): Promise<PipelineStatusResponse> {
+  return apiFetch<PipelineStatusResponse>(
+    `/api/v1/pipeline/${runId}/cancel`,
+    { method: "POST" },
+  );
+}
+
+export function getPipelineReport(
+  runId: string,
+): Promise<PipelineReportResponse> {
+  return apiFetch<PipelineReportResponse>(
+    `/api/v1/pipeline/${runId}/report`,
+  );
+}
