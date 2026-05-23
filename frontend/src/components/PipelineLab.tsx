@@ -30,6 +30,8 @@ import {
   type PipelineStatusResponse,
   type PipelineReportResponse,
 } from "@/lib/api";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
 
 /* ── Phase definitions ── */
 const PHASES = [
@@ -56,6 +58,20 @@ const MODEL_PRESETS = [
 ];
 
 type WizardStep = "source" | "model" | "config" | "running" | "complete";
+
+function resolvePhaseIndex(status: PipelineStatusResponse | null): number {
+  if (!status?.current_phase) return -1;
+  const phase = status.current_phase.toLowerCase();
+  const direct = PHASES.findIndex((p) => p.key === phase);
+  if (direct >= 0) return direct;
+  const stageMap: Record<string, number> = {
+    ingest: 0,
+    prepare: 0,
+    evaluate: 3,
+    complete: 3,
+  };
+  return stageMap[phase] ?? -1;
+}
 
 export default function PipelineLab() {
   /* ── Wizard state ── */
@@ -172,8 +188,7 @@ export default function PipelineLab() {
     } catch { /* best effort */ }
   };
 
-  /* ── Phase indicator ── */
-  const phaseIdx = PHASES.findIndex(p => p.key === pipelineStatus?.current_phase);
+  const phaseIdx = resolvePhaseIndex(pipelineStatus);
 
   return (
     <section id="pipeline" className="relative py-20 sm:py-28 px-4">
@@ -297,12 +312,9 @@ export default function PipelineLab() {
                 )}
 
                 <div className="flex justify-end mt-6">
-                  <button
-                    onClick={() => setStep("model")}
-                    className="flex items-center gap-2 px-6 py-2.5 rounded-lg bg-purple-500 hover:bg-purple-600 text-white text-sm font-medium transition-all cursor-pointer"
-                  >
+                  <Button onClick={() => setStep("model")} variant="primary">
                     Next: Choose Model <ChevronRight className="w-4 h-4" />
-                  </button>
+                  </Button>
                 </div>
               </motion.div>
             )}
@@ -332,10 +344,12 @@ export default function PipelineLab() {
                   ))}
                 </div>
                 <div className="flex justify-between mt-6">
-                  <button onClick={() => setStep("source")} className="px-4 py-2 text-sm text-gray-400 hover:text-white transition cursor-pointer">Back</button>
-                  <button onClick={() => setStep("config")} className="flex items-center gap-2 px-6 py-2.5 rounded-lg bg-purple-500 hover:bg-purple-600 text-white text-sm font-medium transition-all cursor-pointer">
+                  <Button onClick={() => setStep("source")} variant="ghost" size="sm">
+                    Back
+                  </Button>
+                  <Button onClick={() => setStep("config")} variant="primary">
                     Next: Configure <ChevronRight className="w-4 h-4" />
-                  </button>
+                  </Button>
                 </div>
               </motion.div>
             )}
@@ -385,15 +399,13 @@ export default function PipelineLab() {
                 )}
 
                 <div className="flex justify-between mt-6">
-                  <button onClick={() => setStep("model")} className="px-4 py-2 text-sm text-gray-400 hover:text-white transition cursor-pointer">Back</button>
-                  <button
-                    onClick={handleLaunch}
-                    disabled={isLaunching}
-                    className="flex items-center gap-2 px-6 py-2.5 rounded-lg bg-gradient-to-r from-purple-500 to-cyan-500 hover:from-purple-600 hover:to-cyan-600 text-white text-sm font-semibold transition-all cursor-pointer disabled:opacity-50"
-                  >
-                    {isLaunching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Rocket className="w-4 h-4" />}
+                  <Button onClick={() => setStep("model")} variant="ghost" size="sm">
+                    Back
+                  </Button>
+                  <Button onClick={handleLaunch} disabled={isLaunching} loading={isLaunching} variant="primary">
+                    {!isLaunching && <Rocket className="w-4 h-4" />}
                     Launch Pipeline
-                  </button>
+                  </Button>
                 </div>
               </motion.div>
             )}
@@ -401,8 +413,13 @@ export default function PipelineLab() {
             {/* ── Step 4: Running ── */}
             {step === "running" && pipelineStatus && (
               <motion.div key="running" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
-                <div className="text-center mb-6">
-                  <h3 className="text-lg font-semibold text-white mb-1">Pipeline Running</h3>
+                <Card
+                  title="Pipeline Running"
+                  subtitle={runId ?? undefined}
+                  glow="neural"
+                  className="border-0 bg-transparent p-0 shadow-none"
+                >
+                <div className="text-center mb-6 -mt-2">
                   <p className="text-sm text-gray-400 font-mono">{runId}</p>
                 </div>
 
@@ -438,10 +455,14 @@ export default function PipelineLab() {
                 </div>
 
                 {/* Metrics */}
-                <div className="grid grid-cols-3 gap-4 mb-6">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
                   <div className="bg-white/[0.03] rounded-lg p-3 text-center">
                     <div className="text-xs text-gray-500 mb-1">Status</div>
                     <div className="text-sm font-semibold text-cyan-400 uppercase">{pipelineStatus.status}</div>
+                  </div>
+                  <div className="bg-white/[0.03] rounded-lg p-3 text-center">
+                    <div className="text-xs text-gray-500 mb-1">Progress</div>
+                    <div className="text-sm font-mono text-white">{pipelineStatus.progress_pct.toFixed(1)}%</div>
                   </div>
                   <div className="bg-white/[0.03] rounded-lg p-3 text-center">
                     <div className="text-xs text-gray-500 mb-1">Phase Loss</div>
@@ -454,10 +475,11 @@ export default function PipelineLab() {
                 </div>
 
                 {/* Progress bar */}
-                <div className="w-full bg-white/5 rounded-full h-2 mb-4">
+                <div className="w-full bg-white/5 rounded-full h-2 mb-4 overflow-hidden">
                   <motion.div
                     className="h-full rounded-full bg-gradient-to-r from-purple-500 to-cyan-500"
-                    animate={{ width: `${pipelineStatus.progress_pct}%` }}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${Math.min(100, Math.max(0, pipelineStatus.progress_pct))}%` }}
                     transition={{ duration: 0.5 }}
                   />
                 </div>
@@ -469,13 +491,11 @@ export default function PipelineLab() {
                 )}
 
                 <div className="flex justify-center">
-                  <button
-                    onClick={handleCancel}
-                    className="px-6 py-2 rounded-lg border border-red-500/30 text-red-400 text-sm hover:bg-red-500/10 transition cursor-pointer"
-                  >
+                  <Button onClick={handleCancel} variant="danger" size="sm">
                     Cancel Pipeline
-                  </button>
+                  </Button>
                 </div>
+                </Card>
               </motion.div>
             )}
 

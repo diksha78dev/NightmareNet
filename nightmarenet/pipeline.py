@@ -151,6 +151,9 @@ class Pipeline:
         *hf_dataset* must be provided.
         """
         self._set_status(PipelineStatus.INGESTING)
+        self.metrics.progress_pct = 2.0
+        self.metrics.current_phase = "ingest"
+        self._emit()
 
         dataset_cfg = self.config.get("dataset", {})
         text_column = dataset_cfg.get("text_column", "text")
@@ -178,6 +181,8 @@ class Pipeline:
                 )
             if self._dataset is not None:
                 logger.info("Ingestion complete: %d samples.", len(self._dataset))
+            self.metrics.progress_pct = 8.0
+            self._emit()
         except Exception as exc:
             self._fail(f"Ingestion failed: {exc}")
             raise
@@ -191,6 +196,9 @@ class Pipeline:
         if self._dataset is None:
             raise RuntimeError("Call .ingest() before .prepare()")
         self._set_status(PipelineStatus.PREPARING)
+        self.metrics.progress_pct = 10.0
+        self.metrics.current_phase = "prepare"
+        self._emit()
 
         try:
             dream_gen, nightmare_gen = create_generators_from_config(self.config)
@@ -222,6 +230,8 @@ class Pipeline:
                 text_column, max_length, batch_size,
             )
             logger.info("Preparation complete: dataloaders ready.")
+            self.metrics.progress_pct = 15.0
+            self._emit()
         except Exception as exc:
             self._fail(f"Preparation failed: {exc}")
             raise
@@ -243,6 +253,25 @@ class Pipeline:
 
         self._set_status(PipelineStatus.TRAINING)
         self.metrics.total_cycles = self.config.get("training", {}).get("num_cycles", 3)
+        self.metrics.progress_pct = 15.0
+        self._emit()
+
+        def _on_train_progress(event: dict) -> None:
+            self.metrics.current_cycle = event.get("cycle", self.metrics.current_cycle)
+            phase = event.get("phase", "")
+            if phase:
+                self.metrics.current_phase = phase
+            avg_loss = event.get("avg_loss")
+            if avg_loss is not None:
+                self.metrics.phase_loss = float(avg_loss)
+            pct = event.get("progress_pct")
+            if pct is not None:
+                # Training occupies 15–85% of overall pipeline progress
+                self.metrics.progress_pct = 15.0 + (float(pct) * 0.7)
+            history = event.get("history")
+            if history is not None:
+                self.metrics.history = history
+            self._emit()
 
         start = time.time()
         try:
@@ -251,17 +280,19 @@ class Pipeline:
                 dream_dataloader=self._dream_dl,
                 nightmare_dataloader=self._nightmare_dl,
                 val_dataloader=self._val_dl,
+                on_progress=_on_train_progress,
             )
 
             # Update metrics from history
             self.metrics.history = history
-            for entry in history:
-                self.metrics.current_cycle = entry.get("cycle", 0)
-                self.metrics.current_phase = entry.get("phase", "")
-                self.metrics.phase_loss = entry.get("avg_loss", 0.0)
+            if history:
+                last = history[-1]
+                self.metrics.current_cycle = last.get("cycle", 0)
+                self.metrics.current_phase = last.get("phase", "")
+                self.metrics.phase_loss = last.get("avg_loss", 0.0)
 
             elapsed = time.time() - start
-            self.metrics.progress_pct = 100.0
+            self.metrics.progress_pct = 85.0
             self.metrics.eta_seconds = 0.0
             self._emit()
             logger.info("Training complete in %.1fs.", elapsed)
@@ -284,6 +315,9 @@ class Pipeline:
             raise RuntimeError("Call .train() before .evaluate()")
 
         self._set_status(PipelineStatus.EVALUATING)
+        self.metrics.progress_pct = 88.0
+        self.metrics.current_phase = "evaluate"
+        self._emit()
 
         try:
             evaluator = Evaluator(
@@ -329,6 +363,8 @@ class Pipeline:
             }
             evaluator.save_results(results_dict)
 
+            self.metrics.progress_pct = 100.0
+            self.metrics.current_phase = "complete"
             self._set_status(PipelineStatus.COMPLETE)
             logger.info("Evaluation complete.")
             return comparison

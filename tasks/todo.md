@@ -110,10 +110,14 @@ All 18 improvement suggestions verified against actual code. 3 subagents used fo
 - [x] Benchmark configs: `configs/benchmark_sst2.yaml` + baseline
 - [x] CONTRIBUTING.md, CI frontend build job
 - [x] UI primitives: `Button`, `Card` in `frontend/src/components/ui/`
+- [x] Pipeline progress: `on_progress` in trainer + pipeline `progress_pct` mapping (15–85% training band)
+- [x] PipelineLab: phase index resolver, progress % in metrics, `Button` CTAs
+- [x] Hosted scaffold: SQLAlchemy models (`User`, `Org`, `Run`, …) + JWT helpers
+- [x] Benchmark runner: `scripts/run_benchmark.py` (`--quick` distortion smoke)
 
 ### In Progress / Next
 - [ ] Run full benchmark on GPU (Python 3.12 + cu121 venv)
-- [ ] Wire PipelineLab to `Button`/`Card` + real-time WebSocket progress
-- [ ] Hosted platform: SQLAlchemy models + auth routes
+- [ ] WebSocket live progress (replace 3s polling in PipelineLab)
+- [ ] Hosted platform: FastAPI routes + Celery workers wired to models
 - [ ] README feature-dense rewrite (DarkLead-style panel catalog)
 - [ ] Colab quickstart notebooks (3)

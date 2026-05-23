@@ -1,15 +1,16 @@
 "use client";
 
 import { motion, type HTMLMotionProps } from "framer-motion";
-import { forwardRef } from "react";
+import { forwardRef, type ReactNode } from "react";
 
 type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 type ButtonSize = "sm" | "md" | "lg";
 
-export interface ButtonProps extends Omit<HTMLMotionProps<"button">, "ref"> {
+export interface ButtonProps extends Omit<HTMLMotionProps<"button">, "ref" | "children"> {
   variant?: ButtonVariant;
   size?: ButtonSize;
   loading?: boolean;
+  children?: ReactNode;
 }
 
 const variantClasses: Record<ButtonVariant, string> = {
