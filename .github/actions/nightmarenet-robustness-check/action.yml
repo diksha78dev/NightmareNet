@@ -1,0 +1,134 @@
+name: NightmareNet Robustness Check
+description: >-
+  Run a NightmareNet robustness evaluation against a model checkpoint and fail
+  the workflow if the aggregate robustness score falls below a configurable
+  threshold. Suitable as a quality gate in pull-request CI.
+author: NightmareNet
+
+branding:
+  icon: shield
+  color: purple
+
+inputs:
+  model-path:
+    description: Path or Hugging Face identifier for the model to evaluate.
+    required: true
+  threshold:
+    description: Minimum acceptable robustness score in [0, 1]. Build fails below this.
+    required: false
+    default: "0.7"
+  dataset:
+    description: Dataset name passed to `nightmarenet evaluate` (informational).
+    required: false
+    default: "sst2"
+  strengths:
+    description: Comma-separated distortion strengths to evaluate.
+    required: false
+    default: "0.1,0.3,0.5,0.7,0.9"
+  text:
+    description: Optional text override; default uses the built-in benchmark sentence.
+    required: false
+    default: ""
+  python-version:
+    description: Python version to provision when running outside an existing setup.
+    required: false
+    default: "3.12"
+  install-source:
+    description: >-
+      Where to install nightmarenet from. Use "local" when the repo is checked
+      out (default) or "pypi" to install the published wheel.
+    required: false
+    default: "local"
+
+outputs:
+  robustness-score:
+    description: Aggregate robustness score reported by the evaluator (float in [0, 1]).
+    value: ${{ steps.evaluate.outputs.robustness-score }}
+  threshold:
+    description: Threshold the score was compared against (echoed for downstream steps).
+    value: ${{ steps.evaluate.outputs.threshold }}
+  report-path:
+    description: Path to the JSON report file produced by the evaluator.
+    value: ${{ steps.evaluate.outputs.report-path }}
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Python ${{ inputs.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+        cache: pip
+
+    - name: Install nightmarenet
+      shell: bash
+      env:
+        INSTALL_SOURCE: ${{ inputs.install-source }}
+      run: |
+        set -euo pipefail
+        python -m pip install --upgrade pip
+        if [ "${INSTALL_SOURCE}" = "local" ]; then
+          pip install -e ".[api]"
+        else
+          pip install "nightmarenet[api]"
+        fi
+
+    - name: Run robustness evaluation
+      id: evaluate
+      shell: bash
+      env:
+        NN_MODEL: ${{ inputs.model-path }}
+        NN_THRESHOLD: ${{ inputs.threshold }}
+        NN_DATASET: ${{ inputs.dataset }}
+        NN_STRENGTHS: ${{ inputs.strengths }}
+        NN_TEXT: ${{ inputs.text }}
+      run: |
+        set -euo pipefail
+        report_path="${RUNNER_TEMP:-/tmp}/nightmarenet-robustness.json"
+
+        extra_args=()
+        if [ -n "${NN_TEXT}" ]; then
+          extra_args+=(--text "${NN_TEXT}")
+        fi
+
+        nightmarenet evaluate \
+          --model "${NN_MODEL}" \
+          --dataset "${NN_DATASET}" \
+          --strengths "${NN_STRENGTHS}" \
+          --json \
+          "${extra_args[@]}" \
+          | tee "${report_path}"
+
+        score=$(python -c "import json,sys; print(json.load(open('${report_path}'))['robustness_score'])")
+
+        echo "robustness-score=${score}" >> "$GITHUB_OUTPUT"
+        echo "threshold=${NN_THRESHOLD}" >> "$GITHUB_OUTPUT"
+        echo "report-path=${report_path}" >> "$GITHUB_OUTPUT"
+
+        echo "### NightmareNet Robustness Report" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+        echo "- **Model:** \`${NN_MODEL}\`" >> "$GITHUB_STEP_SUMMARY"
+        echo "- **Dataset:** \`${NN_DATASET}\`" >> "$GITHUB_STEP_SUMMARY"
+        echo "- **Score:** \`${score}\` (threshold \`${NN_THRESHOLD}\`)" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+
+        python - <<'PY'
+        import json, os, sys
+        score = float(os.environ["NN_THRESHOLD"])
+        report = json.load(open(os.environ.get("RUNNER_TEMP", "/tmp") + "/nightmarenet-robustness.json"))
+        observed = float(report["robustness_score"])
+        if observed < score:
+            sys.stderr.write(
+                f"::error::Robustness score {observed:.4f} is below threshold {score:.4f}\n"
+            )
+            sys.exit(1)
+        print(f"Robustness score {observed:.4f} >= threshold {score:.4f}")
+        PY
+
+    - name: Upload robustness report artifact
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: nightmarenet-robustness-report
+        path: ${{ steps.evaluate.outputs.report-path }}
+        if-no-files-found: warn
