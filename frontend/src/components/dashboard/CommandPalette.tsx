@@ -19,6 +19,11 @@ import {
   IconTrend,
 } from "./icons";
 import type { DashboardSectionKey } from "./Sidebar";
+import {
+  loadRecentPaletteIds,
+  pushRecentPaletteId,
+  rankPaletteItems,
+} from "./useGlobalShortcuts";
 
 interface PaletteItem {
   id: string;
@@ -69,16 +74,15 @@ export function CommandPalette({
     [onNavigate, onAction]
   );
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return items;
-    return items.filter(
-      (it) =>
-        it.label.toLowerCase().includes(q) ||
-        it.hint?.toLowerCase().includes(q) ||
-        it.group.toLowerCase().includes(q)
-    );
-  }, [items, query]);
+  const [recentIds, setRecentIds] = useState<string[]>([]);
+  useEffect(() => {
+    if (open) setRecentIds(loadRecentPaletteIds());
+  }, [open]);
+
+  const filtered = useMemo(
+    () => rankPaletteItems(items, query, recentIds),
+    [items, query, recentIds]
+  );
 
   useEffect(() => {
     if (open) {
@@ -104,10 +108,7 @@ export function CommandPalette({
       if (e.key === "Enter") {
         e.preventDefault();
         const item = filtered[activeIdx];
-        if (item) {
-          item.onRun();
-          onClose();
-        }
+        if (item) runItem(item);
       }
     };
     document.addEventListener("keydown", handler);
@@ -120,13 +121,27 @@ export function CommandPalette({
 
   const grouped = useMemo(() => {
     const map = new Map<string, PaletteItem[]>();
+    // When no query, surface a synthetic "Recent" group at the top.
+    if (!query.trim() && recentIds.length > 0) {
+      const idToItem = new Map(items.map((it) => [it.id, it] as const));
+      const recents = recentIds
+        .map((id) => idToItem.get(id))
+        .filter((x): x is PaletteItem => Boolean(x));
+      if (recents.length > 0) map.set("Recent", recents);
+    }
     for (const it of filtered) {
       const arr = map.get(it.group) ?? [];
       arr.push(it);
       map.set(it.group, arr);
     }
     return Array.from(map.entries());
-  }, [filtered]);
+  }, [filtered, items, recentIds, query]);
+
+  const runItem = (it: PaletteItem) => {
+    pushRecentPaletteId(it.id);
+    it.onRun();
+    onClose();
+  };
 
   return (
     <AnimatePresence>
@@ -183,13 +198,10 @@ export function CommandPalette({
                       const active = idx === activeIdx;
                       return (
                         <button
-                          key={it.id}
+                          key={`${group}-${it.id}`}
                           type="button"
                           onMouseEnter={() => setActiveIdx(idx)}
-                          onClick={() => {
-                            it.onRun();
-                            onClose();
-                          }}
+                          onClick={() => runItem(it)}
                           className={[
                             "group flex w-full items-center gap-3 rounded-md px-2 py-2 text-left cursor-pointer transition-colors",
                             active
