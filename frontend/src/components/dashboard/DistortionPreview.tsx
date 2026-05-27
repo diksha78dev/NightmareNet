@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Panel } from "./Panel";
 import { Button } from "@/components/ui/Button";
@@ -12,6 +12,7 @@ import {
   generateNightmare,
   type DistortionResponse,
 } from "@/lib/api";
+import { HANDOFF_DEMO_TEXT_KEY } from "@/lib/handoff";
 import { IconRunning, IconWand } from "./icons";
 
 const PLACEHOLDER =
@@ -54,6 +55,36 @@ export function DistortionPreview() {
   const [dream, setDream] = useState<DistortionState>(empty());
   const [nightmare, setNightmare] = useState<DistortionState>(empty());
   const toast = useToast();
+
+  // Pick up text handed off from the marketing demo (GuidedDemo / Playground).
+  // Runs once on mount in the browser; the sessionStorage key is cleared so
+  // subsequent visits get the default placeholder.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    let handoff: string | null = null;
+    try {
+      handoff = window.sessionStorage.getItem(HANDOFF_DEMO_TEXT_KEY);
+    } catch {
+      // Privacy / SSR edge cases — silently fall back to placeholder.
+      return;
+    }
+    if (handoff && handoff.trim()) {
+      setText(handoff);
+      toast.push({
+        title: "Continuing from marketing demo",
+        description: "We carried your text into the live distortion preview.",
+        variant: "info",
+      });
+    }
+    try {
+      window.sessionStorage.removeItem(HANDOFF_DEMO_TEXT_KEY);
+    } catch {
+      // Ignore — best-effort cleanup.
+    }
+    // We intentionally omit `toast` from deps; pushing a toast is a one-shot
+    // side-effect that should fire exactly once on mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleRun = async () => {
     setDream({ loading: true, result: null, error: null });
