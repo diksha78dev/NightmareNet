@@ -1,13 +1,31 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { Panel } from "./Panel";
 import { Badge, type BadgeVariant } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { DataTable, type DataTableColumn } from "@/components/ui/DataTable";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
-import { IconBeaker, IconDownload, IconFilter, IconPlus, IconSearch } from "./icons";
+import { SkeletonRows } from "@/components/ui/Skeleton";
+import { useToast } from "@/components/ui/Toast";
+import {
+  IconBeaker,
+  IconDownload,
+  IconFilter,
+  IconKebab,
+  IconPlus,
+  IconSearch,
+} from "./icons";
 
 interface Experiment {
   id: string;
@@ -38,12 +56,227 @@ const statusVariant: Record<Experiment["status"], BadgeVariant> = {
   queued: "warning",
 };
 
-export function ExperimentList() {
+interface ToastApi {
+  push: (t: {
+    title: string;
+    description?: string;
+    variant: "info" | "success" | "warning" | "error";
+  }) => string;
+}
+
+interface RowActionsMenuProps {
+  row: Experiment;
+  toast: ToastApi;
+}
+
+interface MenuItemDef {
+  label: string;
+  ariaLabel: string;
+  variant?: "default" | "danger";
+  onSelect: () => void;
+}
+
+/**
+ * Floating per-row contextual menu. Appears on row hover for pointer devices
+ * and is always visible on touch (no `hover:` class — see container below).
+ *
+ * Keyboard: opens with Enter/Space on the trigger; closes on Escape and on
+ * outside click. The trigger acts as a stable anchor so the popover can
+ * absolutely-position relative to the cell without measuring DOM.
+ */
+function RowActionsMenu({ row, toast }: RowActionsMenuProps) {
+  const [open, setOpen] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
+
+  const close = useCallback(() => setOpen(false), []);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        close();
+      }
+    };
+    const onClick = (e: MouseEvent) => {
+      if (!wrapperRef.current) return;
+      if (!wrapperRef.current.contains(e.target as Node)) close();
+    };
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("mousedown", onClick);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("mousedown", onClick);
+    };
+  }, [open, close]);
+
+  const items: MenuItemDef[] = useMemo(
+    () => [
+      {
+        label: "Compare to baseline",
+        ariaLabel: `Compare ${row.name} to baseline`,
+        onSelect: () => {
+          toast.push({
+            title: "Comparing to baseline",
+            description: `${row.name} vs hardened baseline (Δ robustness pending).`,
+            variant: "info",
+          });
+          console.log("[ExperimentList] compare-to-baseline", row.id);
+        },
+      },
+      {
+        label: "Re-run with strength × 1.2",
+        ariaLabel: `Re-run ${row.name} with strength × 1.2`,
+        onSelect: () => {
+          toast.push({
+            title: "Re-run queued",
+            description: `${row.name} will run at 1.2× the original strength.`,
+            variant: "success",
+          });
+          console.log("[ExperimentList] rerun-x1.2", row.id);
+        },
+      },
+      {
+        label: "Export run report (JSON)",
+        ariaLabel: `Export ${row.name} run report as JSON`,
+        onSelect: () => {
+          toast.push({
+            title: "Export prepared",
+            description: `Generating ${row.id}.json — check downloads in a moment.`,
+            variant: "info",
+          });
+          console.log("[ExperimentList] export-json", row.id);
+        },
+      },
+      {
+        label: "Open in new tab",
+        ariaLabel: `Open ${row.name} in a new tab`,
+        onSelect: () => {
+          toast.push({
+            title: "Deep-link pending",
+            description: "Run-detail deep links land in the next sprint.",
+            variant: "warning",
+          });
+          console.log("[ExperimentList] open-new-tab", row.id);
+        },
+      },
+      {
+        label: "Delete",
+        ariaLabel: `Delete ${row.name}`,
+        variant: "danger",
+        onSelect: () => {
+          toast.push({
+            title: "Delete requires confirmation",
+            description: `${row.name} stays for now — confirmation flow ships next.`,
+            variant: "warning",
+          });
+          console.log("[ExperimentList] delete-requested", row.id);
+        },
+      },
+    ],
+    [row, toast]
+  );
+
+  return (
+    <div
+      ref={wrapperRef}
+      className={[
+        // Visible only when the row is hovered on pointer devices; always
+        // visible on touch (no hover capability). Trigger is also focusable
+        // via keyboard, which forces visibility.
+        "relative inline-flex opacity-100",
+        "hover:opacity-100 focus-within:opacity-100",
+        "[@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover/row:opacity-100",
+      ].join(" ")}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <button
+        type="button"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label={`Row actions for ${row.name}`}
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen((v) => !v);
+        }}
+        className={[
+          "inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-md",
+          "border border-transparent text-slate-400",
+          "transition-colors hover:border-white/10 hover:bg-white/[0.05] hover:text-slate-100",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neural/50",
+        ].join(" ")}
+      >
+        <IconKebab size={14} />
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            key="menu"
+            role="menu"
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 4 }}
+            transition={{ duration: 0.12, ease: "easeOut" }}
+            className={[
+              "absolute right-0 top-7 z-30 min-w-[200px] origin-top-right",
+              "rounded-lg border border-white/[0.08] bg-abyss/95 p-1 shadow-2xl backdrop-blur-md",
+            ].join(" ")}
+          >
+            {items.map((item, i) => {
+              const isDanger = item.variant === "danger";
+              const isLast = i === items.length - 1;
+              return (
+                <button
+                  key={item.label}
+                  type="button"
+                  role="menuitem"
+                  aria-label={item.ariaLabel}
+                  onClick={() => {
+                    item.onSelect();
+                    close();
+                  }}
+                  className={[
+                    "flex w-full cursor-pointer items-center justify-between gap-3",
+                    "rounded-md px-2.5 py-1.5 text-left text-[11.5px]",
+                    "transition-colors focus-visible:outline-none focus-visible:ring-1",
+                    isDanger
+                      ? "text-nightmare-soft hover:bg-nightmare/[0.12] hover:text-nightmare focus-visible:ring-nightmare/50"
+                      : "text-slate-300 hover:bg-white/[0.05] hover:text-slate-100 focus-visible:ring-neural/40",
+                    !isLast || !isDanger ? "" : "mt-0.5 border-t border-white/[0.04] pt-2",
+                  ].join(" ")}
+                >
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+export interface ExperimentListProps {
+  loading?: boolean;
+  onSectionChange?: (key: "benchmarks" | "experiments" | "run-detail") => void;
+  experiments?: Experiment[];
+}
+
+export function ExperimentList({
+  loading = false,
+  onSectionChange,
+  experiments,
+}: ExperimentListProps = {}) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<"all" | Experiment["status"]>("all");
+  const toast = useToast();
+
+  // `experiments` defaults to the demo sample — callers can pass `[]` to
+  // exercise the empty state, or a real dataset once the runs API is wired.
+  const source = experiments ?? SAMPLE;
 
   const rows = useMemo(() => {
-    return SAMPLE.filter((r) => {
+    return source.filter((r) => {
       if (filter !== "all" && r.status !== filter) return false;
       if (!query.trim()) return true;
       const q = query.toLowerCase();
@@ -53,7 +286,27 @@ export function ExperimentList() {
         r.model.toLowerCase().includes(q)
       );
     });
-  }, [query, filter]);
+  }, [query, filter, source]);
+
+  const sourceEmpty = source.length === 0;
+
+  const handleStartFirst = useCallback(() => {
+    if (onSectionChange) {
+      onSectionChange("benchmarks");
+      toast.push({
+        title: "Opening benchmark suite",
+        description: "Pick a benchmark to launch your first run.",
+        variant: "info",
+      });
+    } else {
+      toast.push({
+        title: "Ready when you are",
+        description: "Open the Benchmarks section from the sidebar to start a run.",
+        variant: "info",
+      });
+      console.log("[ExperimentList] empty-state primary: no onSectionChange wired");
+    }
+  }, [onSectionChange, toast]);
 
   const columns: DataTableColumn<Experiment>[] = [
     {
@@ -129,12 +382,20 @@ export function ExperimentList() {
       align: "right",
       cell: (r) => <span className="text-[11px] text-slate-500">{r.createdAt}</span>,
     },
+    {
+      key: "actions",
+      header: <span className="sr-only">Actions</span>,
+      accessor: () => "",
+      align: "right",
+      width: "44px",
+      cell: (r): ReactNode => <RowActionsMenu row={r} toast={toast} />,
+    },
   ];
 
   return (
     <Panel
       title="Experiments"
-      subtitle={`${rows.length} of ${SAMPLE.length} runs`}
+      subtitle={`${rows.length} of ${source.length} runs`}
       icon={<IconBeaker size={14} />}
       glow="dream"
       toolbar={
@@ -166,13 +427,50 @@ export function ExperimentList() {
           <Button variant="ghost" size="sm" aria-label="Export">
             <IconDownload size={12} />
           </Button>
-          <Button variant="primary" size="sm">
+          <Button variant="primary" size="sm" onClick={handleStartFirst}>
             <IconPlus size={12} /> New Run
           </Button>
         </>
       }
-      bodyClassName="px-0 py-0"
+      bodyClassName={loading || sourceEmpty ? "px-4 py-4" : "px-0 py-0"}
     >
+      {loading ? (
+        <SkeletonRows rows={6} />
+      ) : sourceEmpty ? (
+        <EmptyState
+          icon={<IconBeaker size={18} />}
+          title="No experiments yet"
+          description="Kick off your first hardening cycle — a starter benchmark takes about ten minutes on a single GPU and shows you the full Wake → Dream → Nightmare → Compress loop."
+          primary={{
+            label: "Run your first experiment",
+            onClick: handleStartFirst,
+          }}
+          secondary={{
+            label: "Browse benchmarks",
+            onClick: handleStartFirst,
+          }}
+        />
+      ) : (
+        <ExperimentTable columns={columns} rows={rows} />
+      )}
+    </Panel>
+  );
+}
+
+/**
+ * Wraps DataTable in a `group/row` context per row so the `RowActionsMenu`
+ * can fade in on row hover via Tailwind's group-modifier system without
+ * touching the generic DataTable primitive.
+ */
+function ExperimentTable({
+  columns,
+  rows,
+}: {
+  columns: DataTableColumn<Experiment>[];
+  rows: Experiment[];
+}) {
+  return (
+    <div className="[&_tbody_tr]:group/row">
       <DataTable
         columns={columns}
         rows={rows}
@@ -181,6 +479,6 @@ export function ExperimentList() {
         initialSort={{ key: "createdAt", direction: "desc" }}
         empty={<span>No experiments match your filters.</span>}
       />
-    </Panel>
+    </div>
   );
 }
