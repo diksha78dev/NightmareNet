@@ -12,7 +12,7 @@ import logging
 import math
 import os
 import signal
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 import torch
 from datasets import IterableDataset
@@ -250,6 +250,7 @@ class Trainer:
         dream_dataloader: DataLoader,
         nightmare_dataloader: DataLoader,
         val_dataloader: Optional[DataLoader] = None,
+        on_progress: Optional[Callable[[dict], None]] = None,
     ) -> list[dict]:
         """Run the full sleep-cycle training pipeline.
 
@@ -286,6 +287,8 @@ class Trainer:
 
         current_cycle = 0
         current_phase = "init"
+        total_phases = max(len(self.scheduler), 1)
+        completed_phases = 0
         try:
             for cycle, phase, num_epochs in self.scheduler:
                 if self._interrupted:
@@ -296,6 +299,18 @@ class Trainer:
                     break
                 current_cycle = cycle
                 current_phase = phase
+                if on_progress is not None:
+                    try:
+                        on_progress(
+                            {
+                                "cycle": cycle,
+                                "phase": phase,
+                                "progress_pct": (completed_phases / total_phases) * 100.0,
+                                "status": "phase_start",
+                            }
+                        )
+                    except Exception:
+                        logger.debug("on_progress callback failed", exc_info=True)
                 logger.info(
                     "=== Cycle %d - Phase: %s (%d epochs) ===",
                     cycle + 1,
@@ -369,7 +384,24 @@ class Trainer:
                     )
 
                 result["cycle"] = cycle
+                result["phase"] = phase
                 self.history.append(result)
+                completed_phases += 1
+
+                if on_progress is not None:
+                    try:
+                        on_progress(
+                            {
+                                "cycle": cycle,
+                                "phase": phase,
+                                "avg_loss": result.get("avg_loss"),
+                                "progress_pct": (completed_phases / total_phases) * 100.0,
+                                "status": "phase_end",
+                                "history": list(self.history),
+                            }
+                        )
+                    except Exception:
+                        logger.debug("on_progress callback failed", exc_info=True)
 
                 # Log to tracker
                 self.tracker.log_phase(cycle, phase, result)

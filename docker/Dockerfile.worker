@@ -1,0 +1,74 @@
+# syntax=docker/dockerfile:1.6
+#
+# NightmareNet Worker — Celery background worker image
+# Multi-stage build mirroring docker/Dockerfile.api.
+#
+# Build:   docker build -f docker/Dockerfile.worker -t nightmarenet/worker:latest .
+# Run:     docker run --env-file .env nightmarenet/worker:latest
+
+# --- Builder stage ---------------------------------------------------------
+FROM python:3.12-slim AS builder
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+WORKDIR /build
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        build-essential \
+        git \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY pyproject.toml README.md ./
+COPY nightmarenet/ nightmarenet/
+COPY nightmarenet_server/ nightmarenet_server/
+COPY scripts/ scripts/
+
+# Install core + api extras; celery/redis are pulled in optionally so they
+# never break the open-source dependency graph. The worker entrypoint falls
+# back to an in-process loop if Celery is not present.
+RUN pip install --no-cache-dir --prefix=/install ".[api]" \
+    && pip install --no-cache-dir --prefix=/install \
+        "celery[redis]>=5.3,<6" \
+        "redis>=5.0,<6"
+
+# --- Runtime stage ---------------------------------------------------------
+FROM python:3.12-slim AS runtime
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    NIGHTMARENET_LOG_LEVEL=info \
+    NIGHTMARENET_REDIS_URL=redis://redis:6379/0
+
+RUN groupadd --gid 1000 nightmare \
+    && useradd --uid 1000 --gid nightmare --create-home --shell /bin/bash nightmare
+
+WORKDIR /app
+
+COPY --from=builder /install /usr/local
+
+COPY nightmarenet/ nightmarenet/
+COPY nightmarenet_server/ nightmarenet_server/
+COPY scripts/ scripts/
+COPY configs/ configs/
+COPY docker/worker-entrypoint.sh /usr/local/bin/worker-entrypoint.sh
+COPY docker/healthcheck_worker.py /usr/local/bin/healthcheck_worker.py
+
+RUN chmod +x /usr/local/bin/worker-entrypoint.sh \
+    && mkdir -p /app/checkpoints /app/logs /app/data \
+    && chown -R nightmare:nightmare /app
+
+USER nightmare
+
+# Real liveness probe — TCP-connects to the broker and, when Celery is
+# installed, asks the worker to respond to a ping. The previous one-liner
+# (`os.environ.get(NIGHTMARENET_REDIS_URL)`) was a tautology because the
+# same variable is set unconditionally as an ENV directive above.
+HEALTHCHECK --interval=60s --timeout=10s --start-period=30s --retries=3 \
+    CMD python /usr/local/bin/healthcheck_worker.py || exit 1
+
+ENTRYPOINT ["worker-entrypoint.sh"]

@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Zap, Moon, Skull, Loader2, Sparkles, RotateCcw, ArrowRight } from "lucide-react";
+import { Zap, Moon, Skull, Loader2, Sparkles, RotateCcw, ArrowRight, ExternalLink } from "lucide-react";
 import { generateDream, generateNightmare, type DistortionResponse } from "@/lib/api";
+import { HANDOFF_DEMO_TEXT_KEY } from "@/lib/handoff";
 
 type Mode = "dream" | "nightmare";
 
@@ -16,12 +18,25 @@ const SAMPLES = [
 ];
 
 export default function Playground() {
+  const router = useRouter();
   const [mode, setMode] = useState<Mode>("dream");
   const [text, setText] = useState(SAMPLES[0]);
   const [strength, setStrength] = useState(0.5);
   const [result, setResult] = useState<DistortionResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handoffToDashboard = useCallback(() => {
+    if (typeof window !== "undefined" && text.trim()) {
+      try {
+        window.sessionStorage.setItem(HANDOFF_DEMO_TEXT_KEY, text);
+      } catch {
+        // Ignore — privacy mode may disable sessionStorage; dashboard will
+        // simply use its placeholder.
+      }
+    }
+    router.push("/dashboard?from=demo");
+  }, [router, text]);
 
   const distort = useCallback(async () => {
     setLoading(true);
@@ -240,8 +255,16 @@ export default function Playground() {
                 </div>
               </div>
 
-              {/* Use in comparison CTA */}
-              <div className="mt-4 flex justify-end">
+              {/* Continuation CTAs */}
+              <div className="mt-4 flex justify-between items-center gap-3 flex-wrap">
+                <button
+                  type="button"
+                  onClick={handoffToDashboard}
+                  className="flex items-center gap-1.5 text-xs text-muted hover:text-neural transition-colors cursor-pointer"
+                  aria-label="Continue with this text in the live dashboard"
+                >
+                  <ExternalLink className="w-3 h-3" /> Open in dashboard
+                </button>
                 <a href="#resilience" className="flex items-center gap-1.5 text-xs text-muted hover:text-neural transition-colors cursor-pointer">
                   Use in Resilience Lab <ArrowRight className="w-3 h-3" />
                 </a>

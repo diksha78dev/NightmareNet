@@ -14,6 +14,20 @@ from nightmarenet.utils.validation import validate_strength
 
 logger = logging.getLogger(__name__)
 
+# Cache LearnedAdversarialGenerator across calls so we don't reload DistilBERT every distortion.
+_LEARNED_CACHE: dict = {}
+
+
+def _get_learned_generator(model_name: str, strength: float):
+    """Return a cached LearnedAdversarialGenerator instance for ``model_name``."""
+    if model_name in _LEARNED_CACHE:
+        return _LEARNED_CACHE[model_name]
+    from nightmarenet.distortions.learned import LearnedAdversarialGenerator
+
+    gen = LearnedAdversarialGenerator(model_name=model_name, strength=strength)
+    _LEARNED_CACHE[model_name] = gen
+    return gen
+
 
 # Templates for contradictory premises
 CONTRADICTION_TEMPLATES = [
@@ -313,10 +327,10 @@ def apply_adversarial_distortions(text, strength=0.3, config=None) -> str:
         learned_weight = config.get("learned", 0.0)
         if learned_weight > 0 and random.random() < learned_weight:
             try:
-                from nightmarenet.distortions.learned import LearnedAdversarialGenerator
-
-                learned_model = config.get("learned_model", "distilbert-base-uncased")
-                gen = LearnedAdversarialGenerator(model_name=learned_model, strength=strength)
+                gen = _get_learned_generator(
+                    config.get("learned_model", "distilbert-base-uncased"),
+                    strength,
+                )
                 result = gen.generate(result, strength=strength)
             except Exception:
                 logger.warning(

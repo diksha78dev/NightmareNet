@@ -7,7 +7,7 @@ import {
   Zap, Moon, Skull, Shield, GitCompareArrows, Settings2, Upload,
   Activity, CheckCircle2, XCircle,
 } from "lucide-react";
-import { getHealth, type HealthResponse } from "@/lib/api";
+import { getApiBase, getHealth, type HealthResponse } from "@/lib/api";
 
 type ConnectionState = "idle" | "loading" | "connected" | "error";
 
@@ -25,8 +25,6 @@ const DEFS: Omit<Endpoint, "latency" | "status">[] = [
   { name: "Train Config", path: "/api/v1/train/config", icon: Settings2, method: "POST", body: JSON.stringify({}) },
   { name: "Upload", path: "/api/v1/upload/text", icon: Upload, method: "POST", body: undefined, isUpload: true },
 ];
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export default function Status() {
   const [state, setState] = useState<ConnectionState>("idle");
@@ -71,7 +69,7 @@ export default function Status() {
               body: def.body,
             };
           }
-          const res = await fetch(`${API_BASE}${def.path}`, fetchOpts);
+          const res = await fetch(`${getApiBase()}${def.path}`, fetchOpts);
           const latency = Math.round(performance.now() - start);
           return { ...def, latency, status: res.status < 500 ? "ok" as const : "error" as const };
         } catch {

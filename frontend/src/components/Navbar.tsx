@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "framer-motion";
 import {
-  Brain,
   Sparkles,
   Zap,
   Settings2,
@@ -13,7 +12,14 @@ import {
   Menu,
   X,
   Code2,
+  Workflow,
+  LayoutDashboard,
+  Sun,
+  Moon,
+  Monitor,
 } from "lucide-react";
+import Logo from "./Logo";
+import { useTheme } from "@/lib/theme";
 
 const navItems = [
   { label: "Demo", href: "#demo", icon: Sparkles },
@@ -22,6 +28,7 @@ const navItems = [
   { label: "Playground", href: "#playground", icon: Zap },
   { label: "Resilience", href: "#resilience", icon: Shield },
   { label: "Training", href: "#training", icon: Settings2 },
+  { label: "Pipeline", href: "#pipeline", icon: Workflow },
   { label: "Status", href: "#status", icon: Activity },
 ];
 
@@ -31,6 +38,7 @@ export default function Navbar() {
   const [hidden, setHidden] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const { scrollY } = useScroll();
+  const { theme, setTheme } = useTheme();
 
   /* ── Hide on scroll down, show on scroll up ── */
   useMotionValueEvent(scrollY, "change", (latest) => {
@@ -102,14 +110,7 @@ export default function Navbar() {
             onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: "smooth" }); }}
             className="flex items-center gap-2.5 group cursor-pointer"
           >
-            <div className="relative">
-              <Brain className="w-5 h-5 text-neural group-hover:text-dream transition-colors duration-300" />
-              <div className="absolute inset-0 w-5 h-5 bg-neural/20 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity" />
-            </div>
-            <span className="font-mono font-bold text-sm tracking-tight">
-              <span className="text-gradient-neural">Nightmare</span>
-              <span className="text-text-dim">Net</span>
-            </span>
+            <Logo size="sm" showText={true} animated={true} />
           </a>
 
           {/* Desktop nav */}
@@ -141,6 +142,52 @@ export default function Navbar() {
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Dashboard Link */}
+            <a
+              href="/dashboard"
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-neural bg-neural/10 border border-neural/20 hover:bg-neural/15 hover:border-neural/30 transition-all cursor-pointer"
+            >
+              <LayoutDashboard className="w-3.5 h-3.5" />
+              Dashboard
+            </a>
+
+            {/* Theme Toggle */}
+            <div className="hidden sm:flex items-center gap-1 p-1 rounded-lg bg-white/[0.03] border border-white/[0.04]">
+              <button
+                onClick={() => setTheme("light")}
+                className={`p-1.5 rounded-md transition-all cursor-pointer ${
+                  theme === "light"
+                    ? "bg-warning/20 text-warning"
+                    : "text-muted hover:text-text-dim"
+                }`}
+                aria-label="Light mode"
+              >
+                <Sun className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => setTheme("dark")}
+                className={`p-1.5 rounded-md transition-all cursor-pointer ${
+                  theme === "dark"
+                    ? "bg-dream/20 text-dream"
+                    : "text-muted hover:text-text-dim"
+                }`}
+                aria-label="Dark mode"
+              >
+                <Moon className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => setTheme("system")}
+                className={`p-1.5 rounded-md transition-all cursor-pointer ${
+                  theme === "system"
+                    ? "bg-neural/20 text-neural"
+                    : "text-muted hover:text-text-dim"
+                }`}
+                aria-label="System theme"
+              >
+                <Monitor className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
             <a
               href="https://github.com/Adit-Jain-srm/NightmareNet"
               target="_blank"
@@ -200,10 +247,7 @@ export default function Navbar() {
               className="fixed top-0 right-0 bottom-0 z-50 w-72 glass p-6 lg:hidden"
             >
               <div className="flex items-center justify-between mb-8">
-                <span className="font-mono font-bold text-sm">
-                  <span className="text-gradient-neural">Nightmare</span>
-                  <span className="text-text-dim">Net</span>
-                </span>
+                <Logo size="sm" showText={true} animated={false} />
                 <button
                   onClick={() => setMobileOpen(false)}
                   className="p-1.5 rounded-lg hover:bg-white/[0.05] cursor-pointer"
@@ -211,6 +255,16 @@ export default function Navbar() {
                   <X className="w-5 h-5 text-text-dim" />
                 </button>
               </div>
+
+              {/* Dashboard Link - Mobile */}
+              <a
+                href="/dashboard"
+                className="flex items-center gap-3 px-4 py-3 mb-4 rounded-xl text-sm font-medium text-neural bg-neural/10 border border-neural/20 hover:bg-neural/15 transition-all cursor-pointer"
+              >
+                <LayoutDashboard className="w-4 h-4" />
+                Open Dashboard
+              </a>
+
               <div className="space-y-1">
                 {navItems.map((item, i) => {
                   const isActive = active === item.href.replace("#", "");
@@ -233,7 +287,48 @@ export default function Navbar() {
                   );
                 })}
               </div>
-              <div className="mt-8 pt-4 border-t border-white/[0.05]">
+
+              {/* Theme Toggle - Mobile */}
+              <div className="mt-6 pt-4 border-t border-white/[0.05]">
+                <p className="text-xs font-mono text-muted uppercase tracking-wider mb-3">Theme</p>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setTheme("light")}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                      theme === "light"
+                        ? "bg-warning/20 text-warning border border-warning/30"
+                        : "text-muted hover:text-text-dim border border-white/[0.06]"
+                    }`}
+                  >
+                    <Sun className="w-3.5 h-3.5" />
+                    Light
+                  </button>
+                  <button
+                    onClick={() => setTheme("dark")}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                      theme === "dark"
+                        ? "bg-dream/20 text-dream border border-dream/30"
+                        : "text-muted hover:text-text-dim border border-white/[0.06]"
+                    }`}
+                  >
+                    <Moon className="w-3.5 h-3.5" />
+                    Dark
+                  </button>
+                  <button
+                    onClick={() => setTheme("system")}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                      theme === "system"
+                        ? "bg-neural/20 text-neural border border-neural/30"
+                        : "text-muted hover:text-text-dim border border-white/[0.06]"
+                    }`}
+                  >
+                    <Monitor className="w-3.5 h-3.5" />
+                    Auto
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-6 pt-4 border-t border-white/[0.05]">
                 <a
                   href="https://github.com/Adit-Jain-srm/NightmareNet"
                   target="_blank"

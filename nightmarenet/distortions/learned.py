@@ -76,7 +76,14 @@ class LearnedAdversarialGenerator:
 
         # Average attention across all heads and layers
         attentions = outputs.attentions  # tuple of (batch, heads, seq, seq)
+        if not attentions:
+            # Some model configs (or transformers>=5 defaults) return empty attentions; fall back
+            words = text.split()
+            return [random.random() for _ in words]
         avg_attention = torch.stack(attentions).mean(dim=(0, 1, 2))  # (seq_len,)
+        # word-level aggregation expects scalars; if mean is 2D, reduce to last dim
+        if avg_attention.dim() > 1:
+            avg_attention = avg_attention.mean(dim=tuple(range(avg_attention.dim() - 1)))
 
         # Map subword attention back to word-level
         word_ids = encoding.word_ids() if hasattr(encoding, "word_ids") else None

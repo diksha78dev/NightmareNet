@@ -1,25 +1,140 @@
-services:
-  api:
-    build: .
-    ports:
-      - "8000:8000"
-    environment:
-      - NIGHTMARENET_API_KEY=${NIGHTMARENET_API_KEY:-}
-      - NIGHTMARENET_CORS_ORIGINS=${NIGHTMARENET_CORS_ORIGINS:-*}
-    volumes:
-      - ./configs:/app/configs
-      - ./data:/app/data
-    restart: unless-stopped
+# NightmareNet — local development orchestration
+#
+# Boots the full hosted stack: API + worker + Postgres + Redis + Next.js
+# frontend. Use `docker compose up` for a fresh stack, or target a single
+# service with `docker compose up api`.
+#
+# All services share the `nightmarenet` network and mount the repo .env
+# file when present. See docker/Dockerfile.api and docker/Dockerfile.worker.
 
-  train:
-    build: .
-    entrypoint: ["python", "-m", "scripts.train"]
-    profiles:
-      - training
+name: nightmarenet
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
     environment:
-      - NIGHTMARENET_API_KEY=${NIGHTMARENET_API_KEY:-}
+      POSTGRES_DB: ${POSTGRES_DB:-nightmarenet}
+      POSTGRES_USER: ${POSTGRES_USER:-nightmare}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nightmare}
     volumes:
-      - ./configs:/app/configs
-      - ./data:/app/data
-      - ./checkpoints:/app/checkpoints
-      - ./logs:/app/logs
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U ${POSTGRES_USER:-nightmare} -d ${POSTGRES_DB:-nightmarenet}
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nightmarenet
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
+    volumes:
+      - redis_data:/data
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - nightmarenet
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    restart: unless-stopped
+    env_file:
+      - path: ./.env
+        required: false
+    environment:
+      NIGHTMARENET_DATABASE_URL: ${NIGHTMARENET_DATABASE_URL:-postgresql+psycopg://nightmare:nightmare@db:5432/nightmarenet}
+      NIGHTMARENET_REDIS_URL: ${NIGHTMARENET_REDIS_URL:-redis://redis:6379/0}
+      NIGHTMARENET_CORS_ORIGINS: ${NIGHTMARENET_CORS_ORIGINS:-*}
+      NIGHTMARENET_LOG_LEVEL: ${NIGHTMARENET_LOG_LEVEL:-info}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "${API_PORT:-8000}:8000"
+    volumes:
+      - ./configs:/app/configs:ro
+      - api_data:/app/data
+      - api_checkpoints:/app/checkpoints
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/api/v1/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - nightmarenet
+
+  worker:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.worker
+    restart: unless-stopped
+    env_file:
+      - path: ./.env
+        required: false
+    environment:
+      NIGHTMARENET_DATABASE_URL: ${NIGHTMARENET_DATABASE_URL:-postgresql+psycopg://nightmare:nightmare@db:5432/nightmarenet}
+      NIGHTMARENET_REDIS_URL: ${NIGHTMARENET_REDIS_URL:-redis://redis:6379/0}
+      CELERY_CONCURRENCY: ${CELERY_CONCURRENCY:-2}
+      CELERY_LOGLEVEL: ${CELERY_LOGLEVEL:-info}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./configs:/app/configs:ro
+      - api_data:/app/data
+      - api_checkpoints:/app/checkpoints
+    networks:
+      - nightmarenet
+
+  frontend:
+    image: node:20-bookworm-slim
+    restart: unless-stopped
+    working_dir: /app
+    command: ["sh", "-c", "npm ci && npm run dev -- --hostname 0.0.0.0"]
+    env_file:
+      - path: ./.env
+        required: false
+    environment:
+      NEXT_API_REWRITE_URL: ${NEXT_API_REWRITE_URL:-http://api:8000}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
+      NODE_ENV: ${NODE_ENV:-development}
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+    networks:
+      - nightmarenet
+
+networks:
+  nightmarenet:
+    driver: bridge
+
+volumes:
+  db_data:
+  redis_data:
+  api_data:
+  api_checkpoints:
+  frontend_node_modules:

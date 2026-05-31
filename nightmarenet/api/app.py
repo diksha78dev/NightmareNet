@@ -28,6 +28,7 @@ try:
     from slowapi.util import get_remote_address
 
     from nightmarenet.api.auth import APIKeyMiddleware
+    from nightmarenet.api.badge import router as badge_router
     from nightmarenet.api.schemas import (
         CompareRequest,
         CompareResponse,
@@ -38,6 +39,9 @@ try:
         DistortionResponse,
         ErrorResponse,
         HealthResponse,
+        PipelineCreateRequest,
+        PipelineReportResponse,
+        PipelineStatusResponse,
         RobustnessRequest,
         RobustnessResponse,
         TrainingConfigRequest,
@@ -99,6 +103,22 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# --- Copilot router (registered here to share the limiter and avoid circular
+#     imports). Heuristic mode works with no extra deps; LLM mode auto-detects
+#     OPENAI_API_KEY / ANTHROPIC_API_KEY / AZURE_OPENAI_API_KEY at request time.
+from nightmarenet.api.copilot import register_copilot_routes  # noqa: E402
+
+register_copilot_routes(app, limiter)
+
+# --- Config suggestion router (LLM + heuristic fallback) ---
+from nightmarenet.api.suggest import register_suggest_routes  # noqa: E402
+
+register_suggest_routes(app, limiter)
+
+from nightmarenet.api.data_optimize import register_data_optimize_routes  # noqa: E402
+
+register_data_optimize_routes(app, limiter)
 
 
 def _apply_dream_distortions(
@@ -188,7 +208,10 @@ _TEST_CACHE_TTL = 300  # refresh every 5 minutes
 
 
 def _get_test_count() -> Optional[int]:
-    """Return the number of passing tests, cached for 5 minutes."""
+    """Return the number of collected tests, cached (optionally, dev-only)."""
+    flag = os.environ.get("NIGHTMARENET_HEALTH_TEST_COUNT", "0").lower()
+    if flag not in ("1", "true", "yes"):
+        return None
     now = time.time()
     if (
         _test_count_cache["count"] is not None
@@ -215,6 +238,13 @@ def _get_test_count() -> Optional[int]:
     except Exception:
         logger.debug("Failed to count tests", exc_info=True)
     return _test_count_cache["count"]
+
+
+# --- Public sub-routers ---
+# Robustness badges are intentionally unauthenticated so they can be
+# embedded in public READMEs. The /api/v1/badge prefix is allow-listed
+# by APIKeyMiddleware below.
+app.include_router(badge_router)
 
 
 @app.get("/api/v1/health", response_model=HealthResponse, tags=["System"])
@@ -849,3 +879,162 @@ async def upload_text_file(request: Request, file: UploadFile) -> UploadResponse
             status_code=500,
             detail="Internal error during file upload",
         ) from None
+
+
+# ===================================================================
+# Pipeline Endpoints
+# ===================================================================
+
+_PIPELINE_BODY = Body(...)
+
+
+@app.post(
+    "/api/v1/pipeline/create",
+    response_model=PipelineStatusResponse,
+    summary="Create and start an E2E pipeline run",
+    tags=["pipeline"],
+)
+@limiter.limit("5/minute")
+async def create_pipeline(
+    request: Request,
+    body: PipelineCreateRequest = _PIPELINE_BODY,
+):
+    """Create a new pipeline, ingest data, and start training."""
+    from nightmarenet.pipeline import Pipeline
+    from nightmarenet.pipeline_runner import (
+        PipelineRunner,
+        register_runner,
+    )
+
+    # Build config from request
+    config = {
+        "model": {
+            "name": body.model_name,
+            "type": body.model_type,
+            "max_length": 128,
+            "device": "auto",
+        },
+        "dataset": {
+            "text_column": "text",
+            "max_samples": body.max_samples,
+        },
+        "training": {
+            "wake_epochs": body.wake_epochs,
+            "dream_epochs": body.dream_epochs,
+            "nightmare_epochs": body.nightmare_epochs,
+            "num_cycles": body.num_cycles,
+            "batch_size": body.batch_size,
+            "learning_rate": body.learning_rate,
+            "weight_decay": 0.01,
+            "max_grad_norm": 1.0,
+            "gradient_accumulation_steps": 1,
+            "save_every_phase": False,
+            "checkpoint_dir": "checkpoints",
+            "log_dir": "logs",
+        },
+        "distortion": {
+            "dream_strength": body.dream_strength,
+            "nightmare_strength": body.nightmare_strength,
+        },
+        "compression": {
+            "pruning_ratio": 0.2,
+            "pruning_method": "magnitude",
+        },
+        "evaluation": {
+            "metrics": ["recall", "hallucination"],
+        },
+        "tracking": {"backend": "none"},
+        "seed": 42,
+    }
+
+    pipeline = Pipeline(config=config)
+    runner = PipelineRunner(pipeline)
+    try:
+        register_runner(runner)
+    except RuntimeError as e:
+        raise HTTPException(
+            status_code=503,
+            detail=str(e) or "Pipeline runner registry is at capacity",
+        ) from e
+
+    # Build ingest kwargs
+    ingest_kwargs: dict[str, Any] = {}
+    if body.source_type == "urls":
+        if not body.urls:
+            raise HTTPException(400, "urls required when source_type='urls'")
+        ingest_kwargs["urls"] = body.urls
+    elif body.source_type == "huggingface":
+        if not body.hf_dataset:
+            raise HTTPException(400, "hf_dataset required")
+        ingest_kwargs["hf_dataset"] = body.hf_dataset
+        ingest_kwargs["hf_subset"] = body.hf_subset
+    elif body.source_type == "text":
+        if not body.text_content:
+            raise HTTPException(400, "text_content required")
+        ingest_kwargs["text_content"] = body.text_content
+    else:
+        raise HTTPException(400, f"Unknown source_type: {body.source_type}")
+
+    runner.start(**ingest_kwargs)
+    return PipelineStatusResponse(**runner.status())
+
+
+@app.get(
+    "/api/v1/pipeline/{run_id}/status",
+    response_model=PipelineStatusResponse,
+    summary="Get pipeline run status",
+    tags=["pipeline"],
+)
+async def get_pipeline_status(run_id: str):
+    """Poll the current status and metrics of a pipeline run."""
+    from nightmarenet.pipeline_runner import get_runner
+
+    runner = get_runner(run_id)
+    if runner is None:
+        raise HTTPException(404, f"Pipeline run '{run_id}' not found")
+    return PipelineStatusResponse(**runner.status())
+
+
+@app.post(
+    "/api/v1/pipeline/{run_id}/cancel",
+    response_model=PipelineStatusResponse,
+    summary="Cancel a running pipeline",
+    tags=["pipeline"],
+)
+async def cancel_pipeline(run_id: str):
+    """Cancel a running pipeline, saving current checkpoint."""
+    from nightmarenet.pipeline_runner import get_runner
+
+    runner = get_runner(run_id)
+    if runner is None:
+        raise HTTPException(404, f"Pipeline run '{run_id}' not found")
+    runner.cancel()
+    return PipelineStatusResponse(**runner.status())
+
+
+@app.get(
+    "/api/v1/pipeline/{run_id}/report",
+    response_model=PipelineReportResponse,
+    summary="Get pipeline evaluation report",
+    tags=["pipeline"],
+)
+async def get_pipeline_report(run_id: str):
+    """Retrieve the evaluation report for a completed pipeline."""
+    from nightmarenet.pipeline_runner import get_runner
+
+    runner = get_runner(run_id)
+    if runner is None:
+        raise HTTPException(404, f"Pipeline run '{run_id}' not found")
+
+    metrics = runner.pipeline.metrics
+    if metrics.report_md is None:
+        raise HTTPException(
+            400, "Pipeline has not completed evaluation yet."
+        )
+
+    return PipelineReportResponse(
+        run_id=run_id,
+        report_md=metrics.report_md,
+        comparison=metrics.comparison,
+    )
+

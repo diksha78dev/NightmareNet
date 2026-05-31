@@ -7,6 +7,7 @@ import QuickStart from "@/components/QuickStart";
 import Playground from "@/components/Playground";
 import ResilienceLab from "@/components/ResilienceLab";
 import TrainingLab from "@/components/TrainingLab";
+import PipelineLab from "@/components/PipelineLab";
 import FileUpload from "@/components/FileUpload";
 import ModelViewer from "@/components/ModelViewer";
 import Status from "@/components/Status";
@@ -57,7 +58,12 @@ export default function Home() {
 
         <div className="section-glow-line max-w-5xl mx-auto" />
 
-        {/* 8. Advanced tools */}
+        {/* 8. Pipeline Lab — end-to-end training */}
+        <PipelineLab />
+
+        <div className="section-glow-line max-w-5xl mx-auto" />
+
+        {/* 9. Advanced tools */}
         <FileUpload />
 
         <div className="section-glow-line max-w-5xl mx-auto" />

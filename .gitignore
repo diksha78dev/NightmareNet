@@ -13,10 +13,16 @@ eggs/
 venv/
 .env/
 .venv/
+.venv312/
+cuda-install.log
 
 # Environment / IDEs
+.env
 .idea/
-.cursor/
+.cursor/hooks/
+.cursor/plans/
+.cursor/cache/
+.cursor/state/
 .windsurf/
 .trae/
 .gemini/
@@ -41,3 +47,10 @@ coverage/
 .mypy_cache/
 .coverage
 htmlcov/
+
+# Benchmark / experiment outputs
+results/
+
+.venv312-install.log
+
+gpu-bench.log

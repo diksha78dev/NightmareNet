@@ -249,3 +249,82 @@ class DemoResponse(BaseModel):
             "Human-readable explanation of what the distortions reveal."
         ),
     )
+
+
+# --- Pipeline Schemas ---
+
+
+class PipelineCreateRequest(BaseModel):
+    """Request body for creating a new end-to-end pipeline run."""
+
+    # Data source (exactly one must be provided)
+    source_type: str = Field(
+        ...,
+        description="One of: 'urls', 'huggingface', 'text'.",
+    )
+    urls: Optional[list[str]] = Field(
+        default=None,
+        description="List of URLs to scrape (when source_type='urls').",
+    )
+    hf_dataset: Optional[str] = Field(
+        default=None,
+        description="HuggingFace dataset name (when source_type='huggingface').",
+    )
+    hf_subset: Optional[str] = Field(
+        default=None,
+        description="HuggingFace dataset subset.",
+    )
+    text_content: Optional[str] = Field(
+        default=None,
+        description="Raw text content (when source_type='text').",
+    )
+
+    # Model config
+    model_name: str = Field(
+        default="distilbert-base-uncased",
+        description="HuggingFace model name.",
+    )
+    model_type: str = Field(
+        default="masked_lm",
+        description="Model type: causal_lm, masked_lm, or seq_classification.",
+    )
+
+    # Training config
+    num_cycles: int = Field(default=1, ge=1, le=10, description="Sleep cycles.")
+    wake_epochs: int = Field(default=1, ge=1, le=10, description="Wake epochs per cycle.")
+    dream_epochs: int = Field(default=1, ge=1, le=10, description="Dream epochs per cycle.")
+    nightmare_epochs: int = Field(default=1, ge=1, le=10, description="Nightmare epochs per cycle.")
+    learning_rate: float = Field(default=5e-5, gt=0, le=1.0)
+    batch_size: int = Field(default=8, ge=1, le=64)
+    max_samples: Optional[int] = Field(
+        default=500,
+        description="Max training samples (None for unlimited).",
+    )
+    dream_strength: float = Field(default=0.25, ge=0.0, le=1.0)
+    nightmare_strength: float = Field(default=0.8, ge=0.0, le=1.0)
+
+
+class PipelineStatusResponse(BaseModel):
+    """Current status of a pipeline run."""
+
+    run_id: str
+    status: str
+    current_cycle: int = 0
+    total_cycles: int = 0
+    current_phase: str = ""
+    phase_loss: float = 0.0
+    progress_pct: float = 0.0
+    eta_seconds: float = 0.0
+    is_running: bool = False
+    error: Optional[str] = None
+    has_report: bool = False
+    history: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class PipelineReportResponse(BaseModel):
+    """Full evaluation report for a completed pipeline."""
+
+    run_id: str
+    report_md: str
+    comparison: Optional[dict[str, Any]] = None
+

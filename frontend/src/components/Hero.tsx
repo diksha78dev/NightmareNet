@@ -2,7 +2,12 @@
 
 import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Brain, ChevronDown, ArrowRight, Zap } from "lucide-react";
+import { ChevronDown, ArrowRight, Zap, LayoutDashboard } from "lucide-react";
+import Logo from "./Logo";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
+
+gsap.registerPlugin(useGSAP);
 
 const WORDS = ["Dream", "Nightmare", "Compress", "Evolve"];
 
@@ -59,17 +64,29 @@ export default function Hero() {
   const typedWord = useTypewriter(WORDS, 80, 2500);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  useGSAP(() => {
+    gsap.to(".hero-orb-1", {
+      x: 30, y: -20, duration: 8, ease: "sine.inOut", repeat: -1, yoyo: true,
+    });
+    gsap.to(".hero-orb-2", {
+      x: -25, y: 15, duration: 10, ease: "sine.inOut", repeat: -1, yoyo: true,
+    });
+    gsap.to(".hero-orb-3", {
+      x: 15, y: 25, duration: 12, ease: "sine.inOut", repeat: -1, yoyo: true,
+    });
+  }, { scope: containerRef });
+
   return (
     <section
       ref={containerRef}
       className="relative min-h-screen flex flex-col items-center justify-center px-6 overflow-hidden"
     >
       {/* Ambient gradient orbs */}
-      <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-dream/[0.04] rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-nightmare/[0.03] rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-neural/[0.02] rounded-full blur-[150px] pointer-events-none" />
+      <div className="hero-orb-1 absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-dream/[0.04] rounded-full blur-[120px] pointer-events-none" />
+      <div className="hero-orb-2 absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-nightmare/[0.03] rounded-full blur-[120px] pointer-events-none" />
+      <div className="hero-orb-3 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-neural/[0.02] rounded-full blur-[150px] pointer-events-none" />
 
-      {/* Brain icon with glow */}
+      {/* Logo with glow */}
       <motion.div
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -77,11 +94,8 @@ export default function Hero() {
         className="relative z-10 mb-8"
       >
         <div className="relative">
-          <Brain className="w-16 h-16 text-neural" strokeWidth={1} />
-          <div className="absolute inset-0 w-16 h-16 bg-neural/15 rounded-full blur-xl animate-pulse-glow" />
-          {/* Orbit ring */}
-          <div className="absolute inset-[-12px] rounded-full border border-neural/10 animate-[spin_20s_linear_infinite]" />
-          <div className="absolute inset-[-24px] rounded-full border border-dream/5 animate-[spin_30s_linear_infinite_reverse]" />
+          <Logo size="xl" showText={false} animated={true} />
+          <div className="absolute inset-0 bg-neural/15 rounded-full blur-xl animate-pulse-glow" />
         </div>
       </motion.div>
 
@@ -122,9 +136,13 @@ export default function Hero() {
         transition={{ duration: 0.6, delay: 0.55 }}
         className="relative z-10 mt-10 flex flex-wrap items-center justify-center gap-4"
       >
-        <a href="#playground" className="btn-primary">
-          <Zap className="w-4 h-4 relative z-10" />
-          <span className="relative z-10">Enter Playground</span>
+        <a href="/dashboard" className="btn-primary">
+          <LayoutDashboard className="w-4 h-4 relative z-10" />
+          <span className="relative z-10">Launch Dashboard</span>
+        </a>
+        <a href="#playground" className="btn-ghost">
+          <Zap className="w-4 h-4" />
+          Try Playground
         </a>
         <a href="#architecture" className="btn-ghost">
           How It Works

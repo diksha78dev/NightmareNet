@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useCallback, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Skull, ArrowRight, Loader2, RotateCcw, Lightbulb } from "lucide-react";
+import { Sparkles, Skull, ArrowRight, Loader2, RotateCcw, Lightbulb, ExternalLink } from "lucide-react";
 import { runDemo, type DemoResponse } from "@/lib/api";
+import { HANDOFF_DEMO_TEXT_KEY } from "@/lib/handoff";
 
 const SAMPLES = [
   "The transformer model processes sequential input through self-attention layers, allowing it to capture long-range dependencies without recurrence.",
@@ -65,12 +67,25 @@ function CharDiff({
 }
 
 export default function GuidedDemo() {
+  const router = useRouter();
   const [step, setStep] = useState<Step>(0);
   const [text, setText] = useState(SAMPLES[0]);
   const [result, setResult] = useState<DemoResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showNightmare, setShowNightmare] = useState(false);
+
+  const handoffToDashboard = useCallback(() => {
+    if (typeof window !== "undefined" && text.trim()) {
+      try {
+        window.sessionStorage.setItem(HANDOFF_DEMO_TEXT_KEY, text);
+      } catch {
+        // sessionStorage can throw in privacy/incognito modes — ignore;
+        // the dashboard will simply fall back to its placeholder.
+      }
+    }
+    router.push("/dashboard?from=demo");
+  }, [router, text]);
 
   const handleDream = useCallback(async () => {
     setLoading(true);
@@ -177,13 +192,23 @@ export default function GuidedDemo() {
                 className="w-full bg-void/60 border border-white/[0.06] rounded-xl px-4 py-3 text-sm font-mono text-text placeholder:text-muted/40 focus:outline-none focus:border-neural/30 focus:ring-1 focus:ring-neural/15 resize-none transition-colors"
                 placeholder="Enter text here..."
               />
-              <div className="flex items-center justify-between mt-4">
-                <button
-                  onClick={() => setText(SAMPLES[Math.floor(Math.random() * SAMPLES.length)])}
-                  className="flex items-center gap-1.5 text-xs text-muted hover:text-neural transition-colors cursor-pointer"
-                >
-                  <RotateCcw className="w-3 h-3" /> Try another example
-                </button>
+              <div className="flex items-center justify-between mt-4 gap-3 flex-wrap">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <button
+                    onClick={() => setText(SAMPLES[Math.floor(Math.random() * SAMPLES.length)])}
+                    className="flex items-center gap-1.5 text-xs text-muted hover:text-neural transition-colors cursor-pointer"
+                  >
+                    <RotateCcw className="w-3 h-3" /> Try another example
+                  </button>
+                  <button
+                    onClick={handoffToDashboard}
+                    disabled={!text.trim()}
+                    className="flex items-center gap-1.5 text-xs text-muted hover:text-neural transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                    aria-label="Open this text in the live dashboard"
+                  >
+                    <ExternalLink className="w-3 h-3" /> Open in dashboard
+                  </button>
+                </div>
                 <button
                   onClick={handleDream}
                   disabled={loading || !text.trim()}
@@ -342,6 +367,14 @@ export default function GuidedDemo() {
                       Add to Your Training
                     </span>
                   </a>
+                  <button
+                    onClick={handoffToDashboard}
+                    className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-neural/30 bg-neural/[0.05] text-neural text-sm hover:bg-neural/[0.10] transition-colors cursor-pointer"
+                    aria-label="Continue with this text in the live dashboard"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    Continue in dashboard
+                  </button>
                   <button
                     onClick={reset}
                     className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-white/[0.06] text-muted text-sm hover:text-neural hover:border-neural/20 transition-colors cursor-pointer"
