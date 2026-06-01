@@ -142,20 +142,15 @@ body {
 .light .text-slate-300 { color: #475569; }
 .light .text-slate-400 { color: #64748b; }
 .light .text-white { color: #0f172a; }
-.light .text-white\/80 { color: rgba(15, 23, 42, 0.8); }
-.light .text-white\/60 { color: rgba(15, 23, 42, 0.6); }
 
 /* Borders that use white opacity — flip to black opacity */
-.light [class*="border-white\/"] {
+.light [class*="border-white"] {
   border-color: rgba(0, 0, 0, 0.08);
 }
 
 /* Backgrounds that use white opacity — flip to black opacity */
-.light [class*="bg-white\/[0.0"] {
+.light [class*="bg-white"] {
   background-color: rgba(0, 0, 0, 0.03);
-}
-.light [class*="bg-white\/[0.1"] {
-  background-color: rgba(0, 0, 0, 0.05);
 }
 
 /* Gradient text needs darker stops in light mode */
