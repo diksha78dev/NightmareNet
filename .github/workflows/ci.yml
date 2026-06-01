@@ -137,7 +137,7 @@ jobs:
           load: true
           tags: ${{ matrix.tag }}
           cache-from: type=gha,scope=${{ matrix.image }}
-          cache-to: type=gha,scope=${{ matrix.image }},mode=max
+          cache-to: type=gha,scope=${{ matrix.image }},mode=min
 
       - name: Smoke-test image
         run: |
