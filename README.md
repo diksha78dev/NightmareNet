@@ -2,6 +2,22 @@
 
 # NightmareNet
 
+**Deep Learning Adversarial Network for Image Synthesis**
+
+[![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-EE4C2C?logo=pytorch&logoColor=white)](https://pytorch.org/)
+[![Deep Learning](https://img.shields.io/badge/Deep_Learning-GAN-FF6F00?logo=tensorflow)](https://en.wikipedia.org/wiki/Generative_adversarial_network)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Last Commit](https://img.shields.io/github/last-commit/Adit-Jain-srm/NightmareNet)](https://github.com/Adit-Jain-srm/NightmareNet)
+
+*A generative adversarial network exploring the boundaries of AI-generated imagery.*
+
+</div>
+
+---
+
+# NightmareNet
+
 **The first platform that actively improves model robustness through biologically-grounded training cycles.**
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
