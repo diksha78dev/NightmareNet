@@ -1,0 +1,5 @@
+frontend/**/*.js linguist-language=TypeScript
+frontend/**/*.jsx linguist-language=TypeScript
+*.py linguist-detectable
+package-lock.json linguist-generated
+node_modules/** linguist-vendored
