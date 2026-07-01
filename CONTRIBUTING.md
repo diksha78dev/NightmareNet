@@ -27,6 +27,37 @@ Thank you for helping improve NightmareNet. This project uses a **research-first
 
 ---
 
+## Code Philosophy
+
+We value **modularity, clarity, and maintainability** over cleverness. Every contribution should:
+
+- **Single responsibility** — One function does one thing. One module owns one concern.
+- **Small, focused files** — If a file exceeds 400 lines, consider splitting.
+- **Explicit over implicit** — Prefer clear parameter names, type hints, and docstrings over magic.
+- **No god objects** — Don't make a class that does everything. Compose small, testable units.
+- **Fail fast, fail loud** — Validate inputs early. Raise descriptive errors with context.
+
+### AI-Generated Code Disclosure
+
+If your contribution includes **AI-generated code** (Copilot, ChatGPT, Claude, Cursor, etc.), you must:
+
+1. **Disclose it** in the PR description: "This PR includes AI-assisted code generation."
+2. **Review every line** — You are responsible for correctness, not the AI. AI-generated code with obvious bugs or hallucinated APIs will be rejected.
+3. **Understand what it does** — Be prepared to explain any code in your PR during review.
+
+We welcome AI-assisted contributions. We reject blindly pasted AI output.
+
+### UI/UX Changes
+
+Any PR that changes the frontend must include:
+
+- **Before/after screenshots** (or a short screen recording) in the PR description
+- **Mobile viewport** screenshot (375px width) if the change affects layout
+- **Dark + light mode** screenshots if the change affects colors/theming
+- **Accessibility check** — describe how keyboard navigation and screen readers interact with your change
+
+---
+
 ## 1. Local development setup
 
 ### Prerequisites
