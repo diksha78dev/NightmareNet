@@ -30,6 +30,9 @@ venv/
 .cursor/cache/
 .cursor/state/
 .cursor/agents/
+.cursor/skills/impeccable/
+.cursor/skills/continual-learning/
+.cursor/rules/
 .agent/
 .agents/
 .claude/
@@ -38,6 +41,12 @@ venv/
 .trae/
 .gemini/
 .kiro/
+
+# Internal task tracking (not for public)
+tasks/lessons.md
+tasks/todo.md
+AGENTS.md
+frontend/AGENTS.md
 
 # Node / Frontend
 node_modules/

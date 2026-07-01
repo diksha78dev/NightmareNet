@@ -1,0 +1,56 @@
+name: Feature Request
+description: Suggest a new feature or enhancement
+title: "[Feature]: "
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: Feature requests help shape the roadmap. Please be specific about the problem you're solving.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+      placeholder: What problem does this solve? What's the user pain point?
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      placeholder: How would you solve it? What would the API/UX look like?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      placeholder: What other approaches did you consider? Why is this one better?
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Core training loop
+        - Distortion engines
+        - Compression/distillation
+        - Evaluation/metrics
+        - API layer
+        - Frontend/dashboard
+        - CI/CD/DevOps
+        - Documentation
+        - CLI
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority (your assessment)
+      options:
+        - Nice to have
+        - Important
+        - Critical
