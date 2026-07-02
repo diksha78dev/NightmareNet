@@ -18,6 +18,12 @@
 
 # NightmareNet
 
+### Zero-Install Research Sandboxes
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Adit-Jain-srm/NightmareNet/blob/main/notebooks/01_quickstart.ipynb)
+[![Replicate Benchmark](https://img.shields.io/badge/Benchmark-Reproduce_v1.md-blueviolet?logo=googlecolab)](https://colab.research.google.com/github/Adit-Jain-srm/NightmareNet/blob/main/notebooks/02_benchmark_reproduction.ipynb)
+[![Custom Distortions](https://img.shields.io/badge/Developer-Custom_Plugins-orange?logo=googlecolab)](https://colab.research.google.com/github/Adit-Jain-srm/NightmareNet/blob/main/notebooks/03_custom_distortions.ipynb)
+
 **The first platform that actively improves model robustness through biologically-grounded training cycles.**
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
