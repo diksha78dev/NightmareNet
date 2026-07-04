@@ -20,16 +20,28 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[api]"
 
+      - name: Check if model exists
+        id: check_model
+        shell: bash
+        run: |
+          if [ -d "./model" ] || [ -f "./model" ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Evaluate PR branch
-        run: nightmarenet evaluate --model ./model --output pr-results.json --json
-        # NOTE: If ./model doesn't exist, this step will fail in a real repo unless they have it.
-        # This workflow follows the proposed solution format exactly.
+        if: steps.check_model.outputs.exists == 'true'
+        timeout-minutes: 10
+        run: nightmarenet evaluate --model ./model --json > pr-results.json
         continue-on-error: true
 
       - name: Evaluate main branch
+        if: steps.check_model.outputs.exists == 'true'
+        timeout-minutes: 10
         run: |
           git checkout main
-          nightmarenet evaluate --model ./model --output main-results.json --json || true
+          nightmarenet evaluate --model ./model --json > main-results.json || true
           git checkout -
         continue-on-error: true
 
@@ -40,3 +52,4 @@ jobs:
           main_results: main-results.json
           threshold: -0.05
           metrics: "clean_accuracy,robustness_score,textfooler_0.5"
+          model_exists: ${{ steps.check_model.outputs.exists }}

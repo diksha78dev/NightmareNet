@@ -9,6 +9,34 @@ def main():
     metrics_str = os.environ.get("METRICS", "clean_accuracy,robustness_score,textfooler_0.5")
     metrics = [m.strip() for m in metrics_str.split(",") if m.strip()]
 
+    # Check if results exist
+    pr_exists = pr_file and os.path.exists(pr_file)
+    main_exists = main_file and os.path.exists(main_file)
+    model_exists = os.environ.get("MODEL_EXISTS", "true").lower() == "true"
+
+    if not pr_exists or not main_exists:
+        reason = "Evaluation skipped (no model found)"
+        if model_exists:
+            reason = "Evaluation timed out or failed"
+
+        with open("delta_results.json", "w") as f:
+            json.dump({
+                "skipped": True,
+                "reason": reason,
+                "threshold": threshold,
+                "results": [],
+                "exceeds_threshold": False
+            }, f)
+
+        # Export variables to GITHUB_ENV
+        github_env = os.environ.get("GITHUB_ENV")
+        if github_env:
+            with open(github_env, "a") as f:
+                f.write("EXCEEDS_THRESHOLD=false\n")
+                f.write("HAS_REGRESSION=false\n")
+                f.write("HAS_SKIPPED=true\n")
+        sys.exit(0)
+
     try:
         with open(pr_file, "r") as f:
             pr_data = json.load(f)

@@ -25,6 +25,9 @@ inputs:
     description: 'GitHub token for posting comments'
     required: false
     default: ${{ github.token }}
+  model_exists:
+    description: 'Whether the model exists (true/false)'
+    default: 'true'
 
 runs:
   using: 'composite'
@@ -36,17 +39,21 @@ runs:
 
     - name: Compute Delta
       id: compute
+      if: ${{ hashFiles(inputs.pr_results) != '' && hashFiles(inputs.main_results) != '' }}
       shell: bash
       env:
         PR_RESULTS: ${{ inputs.pr_results }}
         MAIN_RESULTS: ${{ inputs.main_results }}
         THRESHOLD: ${{ inputs.threshold }}
         METRICS: ${{ inputs.metrics }}
+        MODEL_EXISTS: ${{ inputs.model_exists }}
       run: python ${{ github.action_path }}/compute_delta.py
 
     - name: Format Comment
       id: format
       shell: bash
+      env:
+        MODEL_EXISTS: ${{ inputs.model_exists }}
       run: python ${{ github.action_path }}/format_comment.py
 
     - name: Post Comment

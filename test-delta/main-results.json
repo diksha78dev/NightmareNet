@@ -1,6 +1,0 @@
-{
-  "clean_accuracy": 0.897,
-  "textfooler_0.5": 0.513,
-  "bertattack_0.7": 0.421,
-  "robustness_score": 0.683
-}

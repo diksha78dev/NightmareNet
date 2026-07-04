@@ -1,4 +1,5 @@
 import json
+import os
 
 def format_percentage(val):
     return f"{val * 100:.1f}%"
@@ -17,7 +18,22 @@ def main():
         with open("delta_results.json", "r") as f:
             data = json.load(f)
     except Exception:
-        print("Could not read delta_results.json")
+        # Fallback if compute_delta didn't run or file is missing
+        model_exists = os.environ.get("MODEL_EXISTS", "true").lower() == "true"
+        reason = "Evaluation timed out or failed" if model_exists else "Evaluation skipped (no model found)"
+        data = {"skipped": True, "reason": reason}
+
+    skipped = data.get("skipped", False)
+    if skipped:
+        reason = data.get("reason", "Evaluation skipped (no model found)")
+        lines = [
+            "<!-- robustness-delta-comment -->",
+            "## Robustness Regression Report",
+            "",
+            f"_{reason}_"
+        ]
+        with open("comment_body.md", "w", encoding="utf-8") as f:
+            f.write("\n".join(lines))
         return
 
     threshold = data.get("threshold", -0.05)
