@@ -16,10 +16,9 @@ from typing import Any, Callable, Optional
 
 from nightmarenet.data.generator import create_generators_from_config
 from nightmarenet.data.ingest import DataIngestor
-from nightmarenet.evaluation.evaluator import Evaluator
-
-from nightmarenet.evaluation.metrics import quick_robustness_score
 from nightmarenet.distortions.text import apply_text_distortions
+from nightmarenet.evaluation.evaluator import Evaluator
+from nightmarenet.evaluation.metrics import quick_robustness_score
 from nightmarenet.training.trainer import Trainer, _tokenize_dataset
 from nightmarenet.utils.config import load_config
 from nightmarenet.utils.telemetry import record_metric, setup_telemetry, trace_phase
@@ -141,6 +140,48 @@ class Pipeline:
         self.metrics.status = PipelineStatus.FAILED
         self.metrics.error = error
         self._emit()
+
+    def _handle_cycle_end(self, event: dict) -> None:
+        """Handle adaptive convergence detection after each training cycle."""
+        if self._trainer is None:
+            return
+        training_cfg = self.config.get("training", {})
+        auto_terminate = training_cfg.get("auto_terminate", False)
+        threshold = training_cfg.get("convergence_threshold", 0.005)
+        patience = training_cfg.get("convergence_patience", 2)
+        if auto_terminate:
+            score = quick_robustness_score(
+                model=self._trainer.model,
+                base_dataset=self._dataset,
+                tokenizer=self._trainer.tokenizer,
+                distortion_fn=apply_text_distortions,
+                strength=0.5,
+                text_column=self.config.get("dataset", {}).get("text_column", "text"),
+                max_length=self.config.get("model", {}).get("max_length", 128),
+                batch_size=training_cfg.get("batch_size", 8),
+                device=str(self._trainer.device),
+            )
+            if self._last_robustness_score is None:
+                self._last_robustness_score = score
+                self._cycles_completed = event.get("cycle", 0) + 1
+            else:
+                delta = abs(score - self._last_robustness_score)
+                self._final_convergence_delta = delta
+                if delta < threshold:
+                    self._convergence_count += 1
+                else:
+                    self._convergence_count = 0
+                self._last_robustness_score = score
+                self._cycles_completed = event.get("cycle", 0) + 1
+                if ( self._convergence_count >= patience
+                    and self._trainer is not None
+                ):
+                    logger.info(
+                        "Robustness converged after %d cycles (delta=%.6f).",
+                        self._cycles_completed,
+                        delta,
+                    )
+                    self._trainer.request_stop()
 
     def cancel(self) -> None:
         """Request graceful cancellation of a running pipeline."""
@@ -465,11 +506,7 @@ class Pipeline:
         self.metrics.total_cycles = num_cycles
         self.metrics.progress_pct = 15.0
         self._emit()
-        
-        training_cfg = self.config.get("training", {})
-        auto_terminate = training_cfg.get("auto_terminate", False)
-        threshold = training_cfg.get("convergence_threshold", 0.005)
-        patience = training_cfg.get("convergence_patience", 2)
+
         def _on_train_progress(event: dict) -> None:
             self.metrics.current_cycle = event.get("cycle", self.metrics.current_cycle)
             phase = event.get("phase", "")
@@ -486,39 +523,7 @@ class Pipeline:
             if history is not None:
                 self.metrics.history = history
             if event.get("event") == "cycle_end":
-                if auto_terminate:
-                    score = quick_robustness_score(
-                        model=self._trainer.model,
-                        base_dataset=self._dataset,
-                        tokenizer=self._trainer.tokenizer,
-                        distortion_fn=apply_text_distortions,
-                        strength=0.5,
-                        text_column=self.config.get("dataset", {}).get("text_column", "text"),
-                        max_length=self.config.get("model", {}).get("max_length", 128),
-                        batch_size=training_cfg.get("batch_size", 8),
-                        device=str(self._trainer.device),
-                    )
-                    if self._last_robustness_score is None:
-                        self._last_robustness_score = score
-                        self._cycles_completed = event.get("cycle", 0) + 1
-                    else:
-                        delta = abs(score - self._last_robustness_score)
-                        self._final_convergence_delta = delta
-                        if delta < threshold:
-                            self._convergence_count += 1
-                        else:
-                            self._convergence_count = 0
-                        self._last_robustness_score = score
-                        self._cycles_completed = event.get("cycle", 0) + 1
-                        if ( self._convergence_count >= patience 
-                            and self._trainer is not None
-                        ):
-                            logger.info(
-                                "Robustness converged after %d cycles (delta=%.6f).", 
-                                self._cycles_completed, 
-                                delta,
-                            )
-                            self._trainer.request_stop()
+                self._handle_cycle_end(event)
             self._emit()
 
         train_attrs = {

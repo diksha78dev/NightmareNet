@@ -183,7 +183,7 @@ class Trainer:
 
         # Interrupt flag
         self._interrupted = False
-        
+
         # External stop request (e.g. adaptive termination)
         self._stop_requested = False
 
@@ -304,7 +304,7 @@ class Trainer:
             for cycle, phase, num_epochs in self.scheduler:
                 if self._interrupted:
                     break
-                
+
                 if self._stop_requested:
                     logger.info("Training stop requested. Terminating after cycle %d.", cycle+1)
                     break
@@ -431,7 +431,7 @@ class Trainer:
 
                 # Log metrics
                 logger.info("Phase result: %s", json.dumps(result, indent=2, default=str))
-                 
+
                 # Notify pipeline that a full training cycle has completed
                 if phase == "compress" and on_progress is not None:
                     try:
@@ -453,7 +453,7 @@ class Trainer:
                 logger.info("Training interrupted, checkpoint saved.")
             if prev_handler is not None:
                 signal.signal(signal.SIGINT, prev_handler)
-            
+
         # Save final model and history
         final_path = os.path.join(self.checkpoint_dir, "final")
         os.makedirs(final_path, exist_ok=True)
