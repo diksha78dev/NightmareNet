@@ -14,6 +14,14 @@ Closes #
 
 -
 
+## Acceptance Criteria
+
+<!-- Copy the acceptance criteria from the linked issue below as checkboxes.
+     Check each box ONLY when your implementation satisfies it.
+     If a criterion is not addressed in this PR, leave it unchecked and explain why. -->
+
+- [ ]
+
 ## Type
 
 - [ ] Bug fix (non-breaking change that fixes an issue)
@@ -37,6 +45,7 @@ Closes #
 - [ ] Added tests for new functionality (if applicable)
 - [ ] Updated documentation (if applicable)
 - [ ] Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/)
+- [ ] All acceptance criteria from the linked issue are satisfied (or exceptions noted above)
 
 ## Screenshots (if UI change)
 

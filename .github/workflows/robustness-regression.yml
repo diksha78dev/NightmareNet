@@ -1,0 +1,55 @@
+name: Robustness Regression Check
+on: [pull_request]
+
+jobs:
+  robustness-delta:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[api]"
+
+      - name: Check if model exists
+        id: check_model
+        shell: bash
+        run: |
+          if [ -d "./model" ] || [ -f "./model" ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Evaluate PR branch
+        if: steps.check_model.outputs.exists == 'true'
+        timeout-minutes: 10
+        run: nightmarenet evaluate --model ./model --json > pr-results.json
+        continue-on-error: true
+
+      - name: Evaluate main branch
+        if: steps.check_model.outputs.exists == 'true'
+        timeout-minutes: 10
+        run: |
+          git checkout main
+          nightmarenet evaluate --model ./model --json > main-results.json || true
+          git checkout -
+        continue-on-error: true
+
+      - name: Compute delta and post comment
+        uses: ./.github/actions/robustness-delta-comment/
+        with:
+          pr_results: pr-results.json
+          main_results: main-results.json
+          threshold: -0.05
+          metrics: "clean_accuracy,robustness_score,textfooler_0.5"
+          model_exists: ${{ steps.check_model.outputs.exists }}

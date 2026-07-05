@@ -2,7 +2,8 @@ name: NightmareNet Robustness Check
 description: >-
   Run a NightmareNet robustness evaluation against a model checkpoint and fail
   the workflow if the aggregate robustness score falls below a configurable
-  threshold. Suitable as a quality gate in pull-request CI.
+  threshold. Suitable as a quality gate in pull-request CI. To detect regressions
+  against the main branch, see the robustness-delta-comment action.
 author: NightmareNet
 
 branding:

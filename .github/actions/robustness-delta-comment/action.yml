@@ -1,0 +1,73 @@
+name: 'Robustness Delta Comment'
+description: 'Computes robustness delta between PR and main branches, posts a PR comment, and optionally blocks on regression.'
+author: 'NightmareNet'
+
+inputs:
+  pr_results:
+    description: 'Path to the JSON report of the PR branch evaluation'
+    required: true
+  main_results:
+    description: 'Path to the JSON report of the main branch evaluation'
+    required: true
+  threshold:
+    description: 'Maximum allowed regression before blocking (e.g. -0.05)'
+    default: '-0.05'
+  metrics:
+    description: 'Comma-separated metrics to compare (e.g. clean_accuracy,robustness_score)'
+    default: 'clean_accuracy,robustness_score,textfooler_0.5'
+  comment_mode:
+    description: 'always | on_regression | never'
+    default: 'always'
+  block_on_regression:
+    description: 'Fail the check if regression exceeds threshold'
+    default: 'true'
+  github_token:
+    description: 'GitHub token for posting comments'
+    required: false
+    default: ${{ github.token }}
+  model_exists:
+    description: 'Whether the model exists (true/false)'
+    default: 'true'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Compute Delta
+      id: compute
+      if: ${{ hashFiles(inputs.pr_results) != '' && hashFiles(inputs.main_results) != '' }}
+      shell: bash
+      env:
+        PR_RESULTS: ${{ inputs.pr_results }}
+        MAIN_RESULTS: ${{ inputs.main_results }}
+        THRESHOLD: ${{ inputs.threshold }}
+        METRICS: ${{ inputs.metrics }}
+        MODEL_EXISTS: ${{ inputs.model_exists }}
+      run: python ${{ github.action_path }}/compute_delta.py
+
+    - name: Format Comment
+      id: format
+      shell: bash
+      env:
+        MODEL_EXISTS: ${{ inputs.model_exists }}
+      run: python ${{ github.action_path }}/format_comment.py
+
+    - name: Post Comment
+      if: inputs.comment_mode == 'always' || (inputs.comment_mode == 'on_regression' && env.HAS_REGRESSION == 'true')
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        GITHUB_EVENT_PATH: ${{ github.event_path }}
+      run: python ${{ github.action_path }}/post_comment.py
+
+    - name: Enforce Regression Threshold
+      if: inputs.block_on_regression == 'true' && env.EXCEEDS_THRESHOLD == 'true'
+      shell: bash
+      run: |
+        echo "::error::Regression exceeds threshold of ${{ inputs.threshold }}!"
+        exit 1

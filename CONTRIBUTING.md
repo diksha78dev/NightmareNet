@@ -17,13 +17,116 @@ Thank you for helping improve NightmareNet. This project uses a **research-first
 ## Table of Contents
 
 1. [Before you start](#before-you-start)
-2. [Local development setup](#1-local-development-setup)
-3. [Architecture pointers (OSS core vs hosted platform)](#2-architecture-pointers)
-4. [Adding a new distortion](#3-adding-a-new-distortion)
-5. [Coding standards](#4-coding-standards)
-6. [Documentation](#5-documentation)
-7. [PR checklist](#6-pr-checklist)
-8. [Where to ask for help](#7-where-to-ask-for-help)
+2. [Opening issues](#opening-issues)
+3. [Issue assignment rules](#issue-assignment-rules)
+4. [Local development setup](#1-local-development-setup)
+5. [Architecture pointers (OSS core vs hosted platform)](#2-architecture-pointers)
+6. [Adding a new distortion](#3-adding-a-new-distortion)
+7. [Coding standards](#4-coding-standards)
+8. [Documentation](#5-documentation)
+9. [PR checklist](#6-pr-checklist)
+10. [Where to ask for help](#7-where-to-ask-for-help)
+
+---
+
+## Opening Issues
+
+Before opening a new issue, **search existing issues** to avoid duplicates. If you find a related issue, comment on it instead of creating a new one.
+
+### Required Format
+
+Every issue must follow this structure:
+
+**Title:** `[Type]: Short descriptive title`
+
+Types: `[Feature]`, `[Bug]`, `[Docs]`, `[Refactor]`, `[Test]`, `[Infra]`
+
+**Body (mandatory sections):**
+
+1. **Problem / Motivation** - What's missing or broken? Why does it matter? Reference actual files, error messages, or user workflows.
+
+2. **Proposed Solution** - Your suggested approach. Include:
+   - Which files/modules would be affected
+   - Key design decisions and tradeoffs
+   - Any new dependencies required
+
+3. **Acceptance Criteria** - Concrete, checkable items that define "done". Use checkboxes:
+   ```
+   - [ ] Function X returns correct output for input Y
+   - [ ] Tests added covering the new behavior
+   - [ ] Documentation updated
+   ```
+
+4. **Scope / Difficulty Estimate** - Is this a 1-hour fix or a multi-day feature? Help us label it correctly.
+
+**Issues that will be closed without action:**
+- One-sentence issues with no proposed solution ("Add tests")
+- Issues that duplicate existing functionality without checking the codebase
+- Issues requesting features already listed in other open issues
+- Issues with no acceptance criteria
+
+### Before You Open
+
+- [ ] Searched existing open AND closed issues for duplicates
+- [ ] Read the relevant source code to confirm the gap exists
+- [ ] Checked `tests/` to see if what you're proposing is already covered
+- [ ] Included file paths and line numbers where relevant
+
+---
+
+## Issue Assignment Rules
+
+Assignments are handled transparently. These rules apply to all contributors equally.
+
+### Requesting Assignment
+
+To request assignment on an issue, comment with:
+1. A brief explanation of **your planned approach** (not just "assign me")
+2. Which files you'll modify
+3. Estimated timeline (days, not weeks)
+
+**Bad:** "Please assign this to me."
+**Good:** "I'd like to work on this. Plan: add a `healthcheck` directive to the `api` service in docker-compose.yml using curl against /api/v1/health. Will also add a `start_period` of 15s. Should take about 1 hour."
+
+### Assignment Priority
+
+| Scenario | Who gets assigned |
+|----------|-------------------|
+| Single request | That person (if approach is reasonable) |
+| Multiple requests, all new contributors | First-come-first-served (earliest comment timestamp) |
+| Multiple requests, one has better approach | Better approach wins regardless of timing |
+| Requester already has 2+ open assigned issues without PRs | Skipped in favor of the next requester |
+
+### Concurrent Assignments (Guidelines, not hard limits)
+
+We encourage contributors to focus on delivering quality over quantity. As a general guideline:
+
+- **New contributors:** Start with 1 issue to build familiarity with the codebase and review process
+- **Returning contributors:** Take on more as you're comfortable, but avoid having multiple stale assignments
+- **The real rule:** If your existing assignments have no open PRs or progress updates, new requests may be deprioritized in favor of contributors who are actively delivering
+
+### Unassignment
+
+You will be unassigned if:
+- 7 days pass with no PR and no progress update comment
+- You request assignment on a new issue while your current one has no activity
+- Your approach comment shows you haven't read the existing codebase (e.g., proposing to add something that already exists)
+
+### Conflict Resolution
+
+If two people request the same issue simultaneously (within 1 hour):
+1. The person with the more detailed, code-aware approach comment wins
+2. If approaches are equally strong, the person with fewer current assignments wins
+3. If still tied, the earlier timestamp wins
+
+### Pro Tips
+
+- Comment your approach BEFORE asking for assignment - it shows you've done research
+- Small PRs merge faster than large ones - if an issue is big, ask if it can be split into sub-issues
+- If you're stuck, comment on the issue asking for help - don't go silent for a week
+- **We merge quickly.** Focus on completing your current assigned issue before requesting new ones. Deliver first, then pick up more.
+- **Think you can do it better?** If an issue is assigned but has no PR or progress after a few days, feel free to comment with your approach. Quality implementations are always welcome - we'd rather merge the best solution regardless of who was "first."
+- All assignment decisions are at the maintainer's discretion based on these guidelines. The goal is shipping great code, not bureaucracy.
 
 ---
 
@@ -266,6 +369,8 @@ Good documentation is as important as good code. If you're unsure what to update
 
 ## 6. PR checklist
 
+> **CI runs `ruff check .` on every PR and will block merge if there are lint errors.** Run it locally before pushing to avoid failed checks.
+
 Before requesting review, confirm every box.
 
 - [ ] I have **starred the repo** and **followed [@Adit-Jain-srm](https://github.com/Adit-Jain-srm)**.
@@ -283,6 +388,10 @@ Before requesting review, confirm every box.
   - link to the issue / discussion
   - **before / after** behavior (or numbers, when applicable)
   - any breaking change explicitly called out at the top.
+- [ ] **Acceptance criteria from the linked issue are copied into the PR description as a checklist.** Every criterion must be checked off before requesting review. If a criterion cannot be met in this PR, explain why in the description.
+
+> [!NOTE]
+> **Why acceptance criteria in the PR?** Issues define what "done" looks like. PRs prove it. Copying the acceptance criteria into your PR description creates a verifiable contract: reviewers check the boxes against your code, and incomplete implementations are caught before review begins (not after). If your PR only addresses a subset of the criteria, state that explicitly and link to a follow-up issue for the rest.
 
 CI mirrors the local checks plus a security scan. Merging is blocked on a green CI and one approving review.
 

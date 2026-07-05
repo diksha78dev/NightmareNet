@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import tempfile
+from unittest.mock import patch
 
 import pytest
 
@@ -183,3 +184,83 @@ class TestEdgeCases:
         ])
         ds = ingestor.from_text_content(content)
         assert len(ds) <= 15
+
+    def test_minimum_samples_threshold_raises(self, ingestor):
+        """_finalise should raise ValueError if resulting dataset has fewer than _MIN_SAMPLES."""
+        # We provide only 5 samples (less than 10)
+        content = "\n\n".join([
+            f"Paragraph {i}: This is valid but not enough samples."
+            for i in range(5)
+        ])
+        with pytest.raises(ValueError, match="produced only 5 usable samples"):
+            ingestor.from_text_content(content)
+
+    def test_minimum_samples_threshold_exact(self, ingestor):
+        """_finalise should NOT raise ValueError if resulting dataset has exactly _MIN_SAMPLES."""
+        content = "\n\n".join([
+            f"Paragraph {i}: This is valid and exactly enough samples to pass the threshold."
+            for i in range(10)
+        ])
+        ds = ingestor.from_text_content(content)
+        assert len(ds) == 10
+
+
+# ── URL ingestion ──
+
+
+class TestUrlIngestion:
+    @patch("nightmarenet.data.ingest.WebScraper")
+    def test_from_urls(self, mock_scraper_class, ingestor):
+        """WebScraper should be instantiated and used to process URLs."""
+        mock_scraper_instance = mock_scraper_class.return_value
+        from datasets import Dataset
+        mock_ds = Dataset.from_dict({"text": [f"Valid sample {i} content" for i in range(15)]})
+        mock_scraper_instance.scrape.return_value = mock_ds
+
+        urls = ["http://example.com/1", "http://example.com/2"]
+        ds = ingestor.from_urls(urls, delay=0.5, chunk_size=256)
+
+        mock_scraper_class.assert_called_once_with(delay=0.5)
+        mock_scraper_instance.scrape.assert_called_once_with(urls, chunk_size=256)
+        assert len(ds) == 15
+        assert "text" in ds.column_names
+
+    @patch("nightmarenet.data.ingest.WebScraper")
+    def test_from_urls_below_threshold_raises(self, mock_scraper_class, ingestor):
+        """from_urls should raise ValueError if scraper returns < 10 samples."""
+        mock_scraper_instance = mock_scraper_class.return_value
+        from datasets import Dataset
+        mock_ds = Dataset.from_dict({"text": [f"Valid sample {i} content" for i in range(5)]})
+        mock_scraper_instance.scrape.return_value = mock_ds
+
+        urls = ["http://example.com/1"]
+        with pytest.raises(ValueError, match="produced only 5 usable samples"):
+            ingestor.from_urls(urls)
+
+
+# ── HuggingFace Hub ingestion ──
+
+
+class TestHuggingFaceIngestion:
+    @patch("nightmarenet.data.ingest.DatasetWrapper")
+    def test_from_huggingface(self, mock_wrapper_class, ingestor):
+        """DatasetWrapper should be used to load HuggingFace datasets."""
+        mock_wrapper_instance = mock_wrapper_class.return_value
+        from datasets import Dataset
+        mock_ds = Dataset.from_dict({"text": [f"HF sample {i} content" for i in range(15)]})
+        mock_wrapper_instance.train_data = mock_ds
+        mock_wrapper_instance.load.return_value = mock_wrapper_instance
+
+        ds = ingestor.from_huggingface("glue", subset="sst2", streaming=True)
+
+        mock_wrapper_class.assert_called_once_with(
+            dataset_name="glue",
+            subset="sst2",
+            text_column="text",
+            max_samples=None,
+            seed=42,
+            streaming=True,
+        )
+        mock_wrapper_instance.load.assert_called_once()
+        assert ds == mock_ds
+
