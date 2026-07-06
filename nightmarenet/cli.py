@@ -37,9 +37,18 @@ def cmd_train(args: argparse.Namespace) -> int:
     print("NightmareNet Training Pipeline")
     print(f"  Config: {config_path}")
     print(f"  Model: {config.get('model', {}).get('name', 'gpt2')}")
+    if getattr(args, "distributed", None):
+        print(f"  Distributed: {args.distributed}")
+    if getattr(args, "resume", None):
+        print(f"  Resume from: {args.resume}")
     print()
 
-    pipeline = Pipeline(config=config, on_event=on_event)
+    pipeline = Pipeline(
+        config=config,
+        on_event=on_event,
+        distributed=getattr(args, "distributed", None),
+        resume_dir=getattr(args, "resume", None)
+    )
 
     try:
         pipeline.run()
@@ -414,6 +423,8 @@ def build_parser() -> argparse.ArgumentParser:
     train_parser.add_argument("--config", required=True, help="YAML config path")
     train_parser.add_argument("--output", help="Output directory for artifacts")
     train_parser.add_argument("--device", default="cpu", help="Device (cpu/cuda)")
+    train_parser.add_argument("--distributed", help="Distributed strategy (e.g. 'auto' or '0,1,2')")
+    train_parser.add_argument("--resume", help="Path to checkpoint directory to resume from")
 
     # evaluate
     eval_parser = subparsers.add_parser("evaluate", help="Evaluate model robustness")
