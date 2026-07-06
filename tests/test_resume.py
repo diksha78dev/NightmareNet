@@ -1,7 +1,6 @@
 """Unit tests for NightmareNet checkpoint saving, offset scheduling, and training resume."""
 
 import os
-
 import pytest
 import torch
 from datasets import Dataset
@@ -137,7 +136,7 @@ def test_trainer_save_and_load_state(minimal_config, shared_model_and_tokenizer)
     trainer = Trainer(config=minimal_config, model=model, tokenizer=tokenizer)
 
     # Checkpoint path
-    path = os.path.join(trainer.checkpoint_dir, "cycle0_wake")
+    path = os.path.join(trainer.checkpoint_dir, "default_run", "cycle-0-wake")
 
     # Let's populate history and save checkpoint
     trainer.history = [{"phase": "wake", "avg_loss": 1.23, "cycle": 0}]
@@ -171,7 +170,7 @@ def test_trainer_resume_execution(minimal_config, shared_model_and_tokenizer):
 
     # Save checkpoint manually at cycle 0 wake
     trainer1._save_checkpoint(cycle=0, phase="wake")
-    checkpoint_path = os.path.join(trainer1.checkpoint_dir, "cycle0_wake")
+    checkpoint_path = os.path.join(trainer1.checkpoint_dir, "default_run", "cycle-0-wake")
 
     # Step 2: Create second trainer configured to resume
     resume_config = minimal_config.copy()
@@ -210,7 +209,7 @@ def test_trainer_resume_corrupted_phase(minimal_config, shared_model_and_tokeniz
     """Test that a ValueError is raised if the checkpoint phase is corrupted or unknown."""
     model, tokenizer = shared_model_and_tokenizer
     trainer = Trainer(config=minimal_config, model=model, tokenizer=tokenizer)
-    path = os.path.join(trainer.checkpoint_dir, "cycle0_wake")
+    path = os.path.join(trainer.checkpoint_dir, "default_run", "cycle-0-wake")
 
     # Save a checkpoint with a corrupted phase
     trainer.history = [{"phase": "wake", "avg_loss": 1.0, "cycle": 0}]
@@ -259,7 +258,7 @@ def test_amp_scaler_save_load(minimal_config, shared_model_and_tokenizer):
     # Mock state dict to simulate a scaler state
     trainer.scaler.state_dict = lambda: {"scale": 128.0, "growth_tracker": 1}
 
-    path = os.path.join(trainer.checkpoint_dir, "cycle0_wake")
+    path = os.path.join(trainer.checkpoint_dir, "default_run", "cycle-0-wake")
     trainer._save_checkpoint(cycle=0, phase="wake")
     state_file = os.path.join(path, "training_state.pt")
     assert os.path.exists(state_file)
@@ -333,7 +332,7 @@ def test_chained_resume_execution(minimal_config, shared_model_and_tokenizer):
     )
     assert len(trainer1.history) == 1
     assert trainer1.history[0]["phase"] == "wake"
-    chk_a = os.path.join(trainer1.checkpoint_dir, "cycle0_wake")
+    chk_a = os.path.join(trainer1.checkpoint_dir, "default_run", "cycle-0-wake")
     assert os.path.exists(chk_a)
 
     # Run 2: Resume from A, run second phase (dream) and stop (interrupt)
@@ -360,7 +359,7 @@ def test_chained_resume_execution(minimal_config, shared_model_and_tokenizer):
     assert len(trainer2.history) == 2
     assert trainer2.history[0]["phase"] == "wake"
     assert trainer2.history[1]["phase"] == "dream"
-    chk_b = os.path.join(trainer2.checkpoint_dir, "cycle0_dream")
+    chk_b = os.path.join(trainer2.checkpoint_dir, "default_run", "cycle-0-dream")
     assert os.path.exists(chk_b)
 
     # Run 3: Resume from B, run to completion (cycles = 3, so remaining 10 phases)
@@ -406,7 +405,7 @@ def test_adaptive_scheduler_resume(minimal_config, shared_model_and_tokenizer):
         {"phase": "dream", "avg_loss": 1.8, "cycle": 0}
     ]
     trainer1._save_checkpoint(cycle=0, phase="dream")
-    checkpoint_path = os.path.join(trainer1.checkpoint_dir, "cycle0_dream")
+    checkpoint_path = os.path.join(trainer1.checkpoint_dir, "default_run", "cycle-0-dream")
 
     # Resume with adaptive scheduler
     resume_config = config.copy()

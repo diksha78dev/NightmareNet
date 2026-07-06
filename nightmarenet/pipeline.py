@@ -96,11 +96,15 @@ class Pipeline:
         config: dict,
         on_event: Optional[Callable[[dict], None]] = None,
         run_id: Optional[str] = None,
+        distributed: Optional[str] = None,
+        resume_dir: Optional[str] = None,
     ) -> None:
         import uuid
         self.run_id = run_id or str(uuid.uuid4())
         self.config = config
         self.on_event = on_event
+        self.distributed = distributed
+        self.resume_dir = resume_dir
         self.metrics = PipelineMetrics()
         self._cancelled = False
 
@@ -424,7 +428,11 @@ class Pipeline:
                 nightmare_data = nightmare_gen.generate(nightmare_base)
 
                 # Create trainer (loads model + tokenizer)
-                self._trainer = Trainer(config=self.config)
+                self._trainer = Trainer(
+                    config=self.config,
+                    distributed=self.distributed,
+                    resume_dir=self.resume_dir,
+                )
                 self._trainer.run_id = self.run_id
 
                 # Snapshot baseline model weights for later evaluation
