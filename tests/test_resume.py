@@ -221,12 +221,13 @@ def test_trainer_resume_corrupted_phase(minimal_config, shared_model_and_tokeniz
     state["phase"] = "corrupted_phase_name"
     torch.save(state, state_file)
 
-    # Re-calculate the checksum of training_state.pt and update metadata.json to pass integrity check
+    # Recalculate checksum of training_state.pt and update metadata.json to pass check
     import json
+
     from nightmarenet.distributed.checkpoint import compute_file_sha256
     new_hash = compute_file_sha256(state_file)
     meta_path = os.path.join(path, "metadata.json")
-    with open(meta_path, "r") as f:
+    with open(meta_path) as f:
         meta = json.load(f)
     meta["file_hashes"]["training_state.pt"] = new_hash
     with open(meta_path, "w") as f:
@@ -458,7 +459,7 @@ def test_adaptive_scheduler_resume(minimal_config, shared_model_and_tokenizer):
 
 
 def test_optimizer_param_group_mismatch(minimal_config, shared_model_and_tokenizer, caplog):
-    """Test that a warning is logged and loading optimizer state is skipped if param group count mismatches."""
+    """Test warning logging and skipping optimizer load if param groups mismatch."""
     import logging
     model, tokenizer = shared_model_and_tokenizer
     trainer1 = Trainer(config=minimal_config, model=model, tokenizer=tokenizer)
@@ -505,6 +506,7 @@ def test_optimizer_param_group_mismatch(minimal_config, shared_model_and_tokeniz
 def test_checkpoint_version_compatibility(minimal_config, shared_model_and_tokenizer):
     """Test that validating checkpoint integrity raises ValueError on incompatible version."""
     import json
+
     from nightmarenet.distributed.checkpoint import validate_checkpoint_integrity
     model, tokenizer = shared_model_and_tokenizer
     trainer = Trainer(config=minimal_config, model=model, tokenizer=tokenizer)
@@ -514,7 +516,7 @@ def test_checkpoint_version_compatibility(minimal_config, shared_model_and_token
 
     # Modify version in metadata.json to be incompatible
     meta_path = os.path.join(checkpoint_path, "metadata.json")
-    with open(meta_path, "r") as f:
+    with open(meta_path) as f:
         metadata = json.load(f)
     metadata["version"] = "999.0.0"
     with open(meta_path, "w") as f:

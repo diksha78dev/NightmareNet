@@ -130,7 +130,11 @@ class Trainer:
         model_name = self.model_config.get("name", "gpt2")
         self.model_type = self.model_config.get("type", "causal_lm")
         if model is None:
-            logger.info("Loading model base architecture: %s (type=%s)", model_name, self.model_type)
+            logger.info(
+                "Loading model base architecture: %s (type=%s)",
+                model_name,
+                self.model_type,
+            )
             model_cls = _MODEL_TYPE_MAP.get(self.model_type)
             if model_cls is None:
                 raise ValueError(
@@ -313,11 +317,14 @@ class Trainer:
         # Post-save validation and complete file hashes update
         meta_path = os.path.join(path, "metadata.json")
         try:
-            from nightmarenet.distributed.checkpoint import compute_dir_hashes, validate_checkpoint_integrity
+            from nightmarenet.distributed.checkpoint import (
+                compute_dir_hashes,
+                validate_checkpoint_integrity,
+            )
             file_hashes = compute_dir_hashes(path)
             metadata = {}
             if os.path.exists(meta_path):
-                with open(meta_path, "r") as f:
+                with open(meta_path) as f:
                     metadata = json.load(f)
             metadata["file_hashes"] = file_hashes
             with open(meta_path, "w") as f:

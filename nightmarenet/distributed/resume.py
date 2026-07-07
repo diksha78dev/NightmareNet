@@ -2,13 +2,10 @@
 
 from __future__ import annotations
 
-import json
 import logging
 import os
 
 import torch
-
-from nightmarenet.distributed.checkpoint import compute_config_hash
 
 logger = logging.getLogger(__name__)
 
@@ -26,13 +23,17 @@ class ResumeManager:
         current_config: dict
     ) -> dict:
         """Loads state into model and optimizer and returns metadata."""
-        from nightmarenet.distributed.checkpoint import validate_checkpoint_integrity, load_model_weights
+        from nightmarenet.distributed.checkpoint import (
+            load_model_weights,
+            validate_checkpoint_integrity,
+        )
 
         # 1. Run the dedicated validation check (structural + checksum + version checking)
         metadata = validate_checkpoint_integrity(self.resume_dir, current_config)
 
         # 2. Load Model
-        device = next(model.parameters()).device if list(model.parameters()) else torch.device("cpu")
+        has_params = list(model.parameters())
+        device = next(model.parameters()).device if has_params else torch.device("cpu")
         load_model_weights(model, self.resume_dir, device)
 
         # 3. Load Optimizer

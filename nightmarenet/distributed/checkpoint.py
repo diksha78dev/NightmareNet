@@ -72,14 +72,15 @@ class AtomicCheckpointer:
             }, rng_path)
 
             # 4. Metadata and Config hash
-            from nightmarenet import __version__ as APP_VERSION
             import time
+
+            from nightmarenet import __version__ as app_version
 
             meta_path = os.path.join(temp_dir, "metadata.json")
             file_hashes = compute_dir_hashes(temp_dir)
             with open(meta_path, "w") as f:
                 json.dump({
-                    "version": APP_VERSION,
+                    "version": app_version,
                     "timestamp": time.time(),
                     "created_at": time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()),
                     "cycle": cycle,
@@ -180,13 +181,13 @@ def check_version_compatibility(checkpoint_version: str, current_version: str) -
     # they are incompatible.
     if chk_parts[0] != cur_parts[0]:
         raise ValueError(
-            f"Incompatible checkpoint version {checkpoint_version} with current version {current_version}. "
-            "Major version mismatch."
+            f"Incompatible checkpoint version {checkpoint_version} with "
+            f"current version {current_version}. Major version mismatch."
         )
     if chk_parts[0] == 0 and chk_parts[1] != cur_parts[1]:
         raise ValueError(
-            f"Incompatible checkpoint version {checkpoint_version} with current version {current_version}. "
-            "Minor version mismatch in 0.x release."
+            f"Incompatible checkpoint version {checkpoint_version} with "
+            f"current version {current_version}. Minor version mismatch in 0.x release."
         )
 
 
@@ -206,7 +207,7 @@ def validate_checkpoint_integrity(checkpoint_dir: str, config: Optional[dict] = 
         raise ValueError(f"Checkpoint metadata missing in {checkpoint_dir}.")
 
     try:
-        with open(meta_path, "r") as f:
+        with open(meta_path) as f:
             metadata = json.load(f)
     except Exception as e:
         raise ValueError(f"Failed to parse metadata.json in {checkpoint_dir}: {e}") from e
@@ -218,8 +219,8 @@ def validate_checkpoint_integrity(checkpoint_dir: str, config: Optional[dict] = 
             raise ValueError(f"Checkpoint metadata is missing required key: {key}")
 
     # 2. Check version compatibility
-    from nightmarenet import __version__ as APP_VERSION
-    check_version_compatibility(metadata["version"], APP_VERSION)
+    from nightmarenet import __version__ as app_version
+    check_version_compatibility(metadata["version"], app_version)
 
     # 3. Check config hash if current config is provided
     if config is not None:
@@ -234,7 +235,9 @@ def validate_checkpoint_integrity(checkpoint_dir: str, config: Optional[dict] = 
     weight_files = ["model.pt", "pytorch_model.bin", "model.safetensors"]
     has_weights = any(os.path.exists(os.path.join(checkpoint_dir, f)) for f in weight_files)
     if not has_weights:
-        raise ValueError(f"Checkpoint at {checkpoint_dir} does not contain any valid model weights.")
+        raise ValueError(
+            f"Checkpoint at {checkpoint_dir} does not contain any valid model weights."
+        )
 
     required_files = ["optimizer.pt", "rng_state.pt"]
     for f in required_files:
