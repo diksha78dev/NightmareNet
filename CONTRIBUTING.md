@@ -399,17 +399,7 @@ CI mirrors the local checks plus a security scan. Merging is blocked on a green 
 
 ## 8. ECSoC'26 Contributors
 
-This section applies to contributors participating in the **European Computer Science Online Conference 2026 (ECSoC'26)** open-source track.
-
-### Points System
-
-Issues are tagged with difficulty labels that determine base XP:
-
-| Label | Base XP | Scope |
-|-------|---------|-------|
-| `ECSoC26-L1` | 10 XP | Documentation, config fixes, trivial code changes (< 1 hour) |
-| `ECSoC26-L2` | 25 XP | Single-feature additions, test suites, CI workflows (few hours) |
-| `ECSoC26-L3` | 50 XP | Architectural features, new modules, multi-day implementations |
+This section applies to contributors participating in the **ECSoC'26** open-source track.
 
 ### Bonus XP Labels
 
