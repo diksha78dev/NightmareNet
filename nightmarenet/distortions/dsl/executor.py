@@ -22,7 +22,7 @@ class ChainExecutor:
         """
         self.registry = registry or get_registry()
 
-    def _evaluate_condition(self, condition: str, strength: float) -> bool:
+    def _evaluate_condition(self, condition: Optional[str], strength: float) -> bool:
         """Evaluate a condition string against the current strength.
 
         Uses AST parsing for safe evaluation - only allows simple comparisons
@@ -35,7 +35,7 @@ class ChainExecutor:
         Returns:
             True if condition passes, False otherwise
         """
-        if condition == "always":
+        if condition is None or condition == "always":
             return True
 
         try:
@@ -150,6 +150,8 @@ class ChainExecutor:
             Float value
         """
         if isinstance(node, ast.Constant):
+            if node.value is None:
+                raise ValueError("None literal is not allowed")
             if isinstance(node.value, (int, float)):
                 return float(node.value)
             raise ValueError("Only numeric literals are allowed")

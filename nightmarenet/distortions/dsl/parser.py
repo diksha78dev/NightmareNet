@@ -1,7 +1,7 @@
 """YAML parser for distortion chain configurations."""
 
 from pathlib import Path
-from typing import Union
+from typing import Tuple, Union
 
 import yaml
 
@@ -56,7 +56,7 @@ def parse_chain_config(
     return chain_config
 
 
-def validate_chain_config(config_path: Union[str, Path]) -> tuple[bool, str]:
+def validate_chain_config(config_path: Union[str, Path]) -> Tuple[bool, str]:
     """Validate a distortion chain configuration file without loading it.
 
     Args:

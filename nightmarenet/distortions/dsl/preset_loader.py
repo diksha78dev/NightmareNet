@@ -1,7 +1,7 @@
 """Preset loader for discovering and loading distortion chain presets."""
 
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 from nightmarenet.distortions.dsl.parser import parse_chain_config
 from nightmarenet.distortions.dsl.schema import ChainConfig
@@ -26,7 +26,7 @@ def get_preset_dirs() -> List[Path]:
     return dirs
 
 
-def discover_presets(preset_dirs: List[Path] = None) -> List[Path]:
+def discover_presets(preset_dirs: Optional[List[Path]] = None) -> List[Path]:
     """Discover all preset YAML files in the preset directories.
 
     Args:
@@ -50,7 +50,7 @@ def discover_presets(preset_dirs: List[Path] = None) -> List[Path]:
     return sorted(presets)
 
 
-def list_presets(preset_dirs: List[Path] = None) -> List[dict]:
+def list_presets(preset_dirs: Optional[List[Path]] = None) -> List[dict]:
     """List all available presets with metadata.
 
     Args:
@@ -79,7 +79,7 @@ def list_presets(preset_dirs: List[Path] = None) -> List[dict]:
     return presets_info
 
 
-def load_preset(name: str, preset_dirs: List[Path] = None) -> ChainConfig:
+def load_preset(name: str, preset_dirs: Optional[List[Path]] = None) -> ChainConfig:
     """Load a preset by name.
 
     Args:
