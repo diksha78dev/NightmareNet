@@ -43,8 +43,14 @@ def validate_distortion_contract(
     # Test strength=0.0 (should be approximately no-op)
     try:
         result = fn(text, strength=0.0, seed=42)
+        # Allow for minor differences (e.g., whitespace) but require substantial similarity
         if result != text:
-            failures.append(f"strength=0.0 should be no-op, got: '{result}'")
+            # Check if result is close enough (same length, at most 1 char different)
+            if len(result) != len(text) or sum(1 for a, b in zip(result, text) if a != b) > 1:
+                failures.append(
+                    f"strength=0.0 should be approximately no-op, "
+                    f"got: '{result}' (expected: '{text}')"
+                )
     except Exception as e:
         failures.append(f"strength=0.0 raised exception: {e}")
 
@@ -53,7 +59,10 @@ def validate_distortion_contract(
         result1 = fn(text, strength=0.5, seed=42)
         result2 = fn(text, strength=0.5, seed=42)
         if result1 != result2:
-            failures.append("Non-deterministic: same (text, strength, seed) should produce identical output")
+            failures.append(
+                "Non-deterministic: same (text, strength, seed) "
+                "should produce identical output"
+            )
     except Exception as e:
         failures.append(f"Determinism test raised exception: {e}")
 

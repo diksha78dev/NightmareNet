@@ -41,13 +41,15 @@ def load_from_file(
 
     try:
         # Load the module from file
-        spec = importlib.util.spec_from_file_location(path.stem, path)
+        # Use full path as module name to avoid sys.modules key collisions
+        module_name = f"nightmarenet_custom_{path.as_posix().replace('/', '_').replace(chr(92), '_')}"
+        spec = importlib.util.spec_from_file_location(module_name, path)
         if spec is None or spec.loader is None:
             logger.error(f"Failed to load spec for {file_path}")
             return None
 
         module = importlib.util.module_from_spec(spec)
-        sys.modules[path.stem] = module
+        sys.modules[module_name] = module
         spec.loader.exec_module(module)
 
         # Get the function
@@ -97,8 +99,11 @@ def load_custom_engine(
     if fn is None:
         return None
 
-    # Register with a derived name
-    engine_name = f"custom_{function_name}"
+    # Register with a derived name (include file path to avoid collisions)
+    # Use a hash of the file path to keep the name manageable
+    import hashlib
+    file_hash = hashlib.md5(file_path.encode()).hexdigest()[:8]
+    engine_name = f"custom_{file_hash}_{function_name}"
     registry.register(engine_name, fn, metadata={
         'phase': 'custom',
         'description': f'Custom distortion from {file_path}',

@@ -135,6 +135,10 @@ class DistortionRegistry:
             result.setdefault(source, []).append({"name": name, **self._metadata.get(name, {})})
         return result
 
+    def get_engine_metadata(self, name: str) -> Dict[str, Any]:
+        """Get metadata for a specific engine."""
+        return self._metadata.get(name, {})
+
     def register_decorator(
         self,
         name: str,

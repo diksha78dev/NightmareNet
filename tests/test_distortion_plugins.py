@@ -189,4 +189,5 @@ def custom_distort(text: str, strength: float, seed: int = None) -> str:
     result = load_custom_engine(f"custom:{py_file}:custom_distort", registry)
     assert result is not None
     assert result in registry
+    assert result.startswith("custom_")  # New naming pattern with hash
     assert registry.apply(result, "hello", 0.5) == "olleh"

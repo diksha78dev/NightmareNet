@@ -310,7 +310,7 @@ def cmd_distort(args: argparse.Namespace) -> int:
             return 1
 
         result = registry.apply(args.engine, text, strength=strength, seed=args.seed)
-        engine_meta = registry._metadata.get(args.engine, {})
+        engine_meta = registry.get_engine_metadata(args.engine)
         print(f"Original:  {text}")
         print(f"Distorted: {result}")
         print(
