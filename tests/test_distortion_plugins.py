@@ -48,7 +48,6 @@ def test_validate_distortion_contract_strength_zero() -> None:
 
 def test_validate_distortion_contract_determinism() -> None:
     """Test that same inputs must produce same output."""
-    import random
 
     def invalid_distort(text: str, strength: float, seed: int = None) -> str:
         # Use a counter to ensure different outputs

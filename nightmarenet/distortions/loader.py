@@ -43,7 +43,8 @@ def load_from_file(
     try:
         # Load the module from file
         # Use full path as module name to avoid sys.modules key collisions
-        module_name = f"nightmarenet_custom_{path.as_posix().replace('/', '_').replace(chr(92), '_')}"
+        posix_path = path.as_posix().replace("/", "_").replace(chr(92), "_")
+        module_name = f"nightmarenet_custom_{posix_path}"
         spec = importlib.util.spec_from_file_location(module_name, path)
         if spec is None or spec.loader is None:
             logger.error(f"Failed to load spec for {file_path}")
