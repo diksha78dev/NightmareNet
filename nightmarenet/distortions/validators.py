@@ -39,7 +39,7 @@ def validate_distortion_contract(
             failures.append("Empty input should return empty string")
     except Exception as e:
         failures.append(f"Empty input raised exception: {e}")
-    
+
     # Test strength=0.0 (should be approximately no-op)
     try:
         result = fn(text, strength=0.0, seed=42)
@@ -47,7 +47,7 @@ def validate_distortion_contract(
             failures.append(f"strength=0.0 should be no-op, got: '{result}'")
     except Exception as e:
         failures.append(f"strength=0.0 raised exception: {e}")
-    
+
     # Test determinism
     try:
         result1 = fn(text, strength=0.5, seed=42)
@@ -56,7 +56,7 @@ def validate_distortion_contract(
             failures.append("Same (text, strength, seed) should produce identical output")
     except Exception as e:
         failures.append(f"Determinism test raised exception: {e}")
-    
+
     # Test type correctness
     try:
         result = fn(text, strength=0.5, seed=42)
@@ -64,7 +64,7 @@ def validate_distortion_contract(
             failures.append(f"Result should be str, got {type(result)}")
     except Exception as e:
         failures.append(f"Type correctness test raised exception: {e}")
-    
+
     # Test strength in valid range
     try:
         for strength in [0.0, 0.5, 1.0]:
@@ -73,7 +73,7 @@ def validate_distortion_contract(
                 failures.append(f"strength={strength} produced non-str result")
     except Exception as e:
         failures.append(f"Strength range test raised exception: {e}")
-    
+
     return failures
 
 
@@ -92,14 +92,14 @@ def validate_base_distortion(engine_cls: type) -> List[str]:
     if not issubclass(engine_cls, BaseDistortion):
         failures.append("Class must inherit from BaseDistortion")
         return failures
-    
+
     # Check required attributes
     try:
         instance = engine_cls()
     except Exception as e:
         failures.append(f"Failed to instantiate: {e}")
         return failures
-    
+
     if not hasattr(instance, 'name') or not instance.name:
         failures.append("Class must have a non-empty 'name' attribute")
     
@@ -143,7 +143,7 @@ def validate_plugin_package(
     except Exception as e:
         failures.append(f"Failed to load package metadata: {e}")
         return failures
-    
+
     # Check for entry points
     try:
         eps = importlib.metadata.entry_points(group="nightmarenet.distortions")
@@ -153,5 +153,5 @@ def validate_plugin_package(
             failures.append(f"No entry points found in 'nightmarenet.distortions' group")
     except Exception as e:
         failures.append(f"Failed to check entry points: {e}")
-    
+
     return failures

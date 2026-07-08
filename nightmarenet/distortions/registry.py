@@ -65,7 +65,7 @@ class DistortionRegistry:
                 eps = importlib.metadata.entry_points().get("nightmarenet.distortions", [])
             except Exception:
                 eps = []
-        
+
         for ep in eps:
             try:
                 cls = ep.load()
