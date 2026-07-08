@@ -4,11 +4,12 @@ Provides utilities for plugin authors to validate their implementations
 against the NightmareNet distortion contract.
 """
 
+from typing import List
+
 from nightmarenet.distortions.validators import (
     validate_base_distortion,
     validate_distortion_contract,
 )
-from typing import List
 
 
 def validate_distortion_plugin(engine_cls: type) -> List[str]:
