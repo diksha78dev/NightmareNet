@@ -76,10 +76,12 @@ defaults:
 
 def test_parse_chain_config_invalid_yaml():
     """Test that invalid YAML is rejected."""
+    import yaml
+
     with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
         f.write("invalid: yaml: content: [")
         f.flush()
-        with pytest.raises(ValueError):
+        with pytest.raises(yaml.YAMLError):
             parse_chain_config(f.name)
         Path(f.name).unlink()
 
@@ -276,13 +278,13 @@ def test_list_presets():
 
 def test_chain_executor_failed_step_continues():
     """Test that failed steps don't abort the chain."""
-    # Create a custom registry with a failing engine
-    from nightmarenet.distortions.registry import DistortionRegistry
+    # Use global registry and add a failing engine
+    from nightmarenet.distortions.registry import get_registry
 
     def failing_distort(text: str, strength: float, seed=None) -> str:
         raise RuntimeError("Intentional failure")
 
-    registry = DistortionRegistry()
+    registry = get_registry()
     registry.register("failing", failing_distort)
 
     config = ChainConfig(
@@ -300,3 +302,62 @@ def test_chain_executor_failed_step_continues():
     # Should not raise, should skip the failing step
     result = executor.execute(text, config, overall_strength=0.5, seed=42)
     assert isinstance(result, str)
+    # Result should be different from original since dream steps succeeded
+    assert result != text
+
+    # Clean up
+    registry.unregister("failing")
+
+
+def test_condition_parser_security_attribute_access():
+    """Test that condition parser rejects attribute access attempts."""
+    executor = ChainExecutor()
+    # Try to access __class__ attribute
+    assert executor._evaluate_condition("strength.__class__", 0.5) is False
+
+
+def test_condition_parser_security_method_call():
+    """Test that condition parser rejects method calls."""
+    executor = ChainExecutor()
+    # Try to call a method
+    assert executor._evaluate_condition("strength.__str__()", 0.5) is False
+
+
+def test_condition_parser_security_mro_traversal():
+    """Test that condition parser rejects MRO traversal attacks."""
+    executor = ChainExecutor()
+    # Try MRO traversal
+    assert executor._evaluate_condition("strength.__class__.__mro__[1]", 0.5) is False
+
+
+def test_condition_parser_security_subclasses():
+    """Test that condition parser rejects subclasses access."""
+    executor = ChainExecutor()
+    # Try to access subclasses
+    assert executor._evaluate_condition("strength.__class__.__subclasses__()", 0.5) is False
+
+
+def test_condition_parser_security_import():
+    """Test that condition parser rejects import attempts."""
+    executor = ChainExecutor()
+    # Try to import modules
+    assert executor._evaluate_condition("__import__('os').system('ls')", 0.5) is False
+
+
+def test_condition_parser_valid_comparisons():
+    """Test that valid comparison conditions work correctly."""
+    executor = ChainExecutor()
+    assert executor._evaluate_condition("strength > 0.5", 0.7) is True
+    assert executor._evaluate_condition("strength > 0.5", 0.3) is False
+    assert executor._evaluate_condition("strength < 0.5", 0.3) is True
+    assert executor._evaluate_condition("strength < 0.5", 0.7) is False
+    assert executor._evaluate_condition("strength >= 0.5", 0.5) is True
+    assert executor._evaluate_condition("strength >= 0.5", 0.7) is True
+    assert executor._evaluate_condition("strength >= 0.5", 0.3) is False
+    assert executor._evaluate_condition("strength <= 0.5", 0.5) is True
+    assert executor._evaluate_condition("strength <= 0.5", 0.3) is True
+    assert executor._evaluate_condition("strength <= 0.5", 0.7) is False
+    assert executor._evaluate_condition("strength == 0.5", 0.5) is True
+    assert executor._evaluate_condition("strength == 0.5", 0.3) is False
+    assert executor._evaluate_condition("strength != 0.5", 0.3) is True
+    assert executor._evaluate_condition("strength != 0.5", 0.5) is False

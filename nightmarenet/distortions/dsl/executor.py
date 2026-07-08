@@ -1,5 +1,6 @@
 """Sequential chain executor for distortion chains."""
 
+import ast
 import logging
 import random
 from typing import Optional
@@ -24,6 +25,9 @@ class ChainExecutor:
     def _evaluate_condition(self, condition: str, strength: float) -> bool:
         """Evaluate a condition string against the current strength.
 
+        Uses AST parsing for safe evaluation - only allows simple comparisons
+        with the 'strength' variable and numeric literals.
+
         Args:
             condition: Condition string (e.g., "strength > 0.5", "always")
             strength: Current strength value to evaluate against
@@ -34,16 +38,125 @@ class ChainExecutor:
         if condition == "always":
             return True
 
-        # Safe evaluation: only allow strength comparisons
         try:
-            # Create a safe namespace with only the strength variable
-            namespace = {"strength": strength}
-            # Evaluate the condition
-            result = eval(condition, {"__builtins__": {}}, namespace)
-            return bool(result)
+            return self._safe_eval_condition(condition, strength)
         except Exception as e:
             logger.warning(f"Failed to evaluate condition '{condition}': {e}")
             return False
+
+    def _safe_eval_condition(self, condition: str, strength: float) -> bool:
+        """Safely evaluate a condition using AST parsing.
+
+        Only allows: strength comparisons with numeric literals using
+        operators: >, <, >=, <=, ==, !=
+
+        Args:
+            condition: Condition string to evaluate
+            strength: Strength value to compare against
+
+        Returns:
+            Boolean result of the comparison
+
+        Raises:
+            ValueError: If condition contains disallowed constructs
+        """
+        # Parse the condition into an AST
+        tree = ast.parse(condition, mode='eval')
+
+        # Validate the AST structure
+        self._validate_condition_ast(tree.body)
+
+        # Safely evaluate the validated AST
+        return self._eval_ast(tree.body, strength)
+
+    def _validate_condition_ast(self, node: ast.AST) -> None:
+        """Validate that the AST only contains allowed constructs.
+
+        Args:
+            node: AST node to validate
+
+        Raises:
+            ValueError: If disallowed constructs are found
+        """
+        if isinstance(node, ast.Compare):
+            # Validate the left side (should be 'strength' variable)
+            if not isinstance(node.left, ast.Name) or node.left.id != "strength":
+                raise ValueError("Condition must compare 'strength' variable")
+
+            # Validate the right side (should be a number)
+            if len(node.comparators) != 1:
+                raise ValueError("Condition must have exactly one comparison")
+
+            comparator = node.comparators[0]
+            if not isinstance(comparator, (ast.Constant, ast.Num)):
+                # ast.Num is for Python < 3.8, ast.Constant >= 3.8
+                raise ValueError("Condition must compare with a numeric literal")
+
+            # Validate the operator
+            allowed_ops = {
+                ast.Gt: ">",
+                ast.Lt: "<",
+                ast.GtE: ">=",
+                ast.LtE: "<=",
+                ast.Eq: "==",
+                ast.NotEq: "!=",
+            }
+            if len(node.ops) != 1 or type(node.ops[0]) not in allowed_ops:
+                raise ValueError(
+                    f"Condition must use one of: {', '.join(allowed_ops.values())}"
+                )
+        else:
+            raise ValueError("Condition must be a comparison")
+
+    def _eval_ast(self, node: ast.AST, strength: float) -> bool:
+        """Evaluate a validated AST node.
+
+        Args:
+            node: AST node to evaluate
+            strength: Strength value
+
+        Returns:
+            Boolean result
+        """
+        if isinstance(node, ast.Compare):
+            left = strength  # We validated this is the 'strength' variable
+            right = self._eval_literal(node.comparators[0])
+            op = node.ops[0]
+
+            if isinstance(op, ast.Gt):
+                return left > right
+            elif isinstance(op, ast.Lt):
+                return left < right
+            elif isinstance(op, ast.GtE):
+                return left >= right
+            elif isinstance(op, ast.LtE):
+                return left <= right
+            elif isinstance(op, ast.Eq):
+                return left == right
+            elif isinstance(op, ast.NotEq):
+                return left != right
+            else:
+                raise ValueError(f"Unsupported operator: {type(op)}")
+        else:
+            raise ValueError(f"Unsupported AST node type: {type(node)}")
+
+    def _eval_literal(self, node: ast.AST) -> float:
+        """Evaluate a literal node to a float.
+
+        Args:
+            node: AST literal node
+
+        Returns:
+            Float value
+        """
+        if isinstance(node, ast.Constant):
+            if isinstance(node.value, (int, float)):
+                return float(node.value)
+            raise ValueError("Only numeric literals are allowed")
+        elif isinstance(node, ast.Num):  # Python < 3.8 compatibility
+            return float(node.n)
+        else:
+            raise ValueError(f"Unsupported literal type: {type(node)}")
 
     def execute(
         self,
