@@ -1,9 +1,11 @@
 import os
 import shutil
 import tempfile
+
 import pytest
 
 from nightmarenet.pipeline import Pipeline
+
 
 @pytest.mark.slow
 def test_4_phase_training_cycle_e2e():
@@ -47,7 +49,7 @@ def test_4_phase_training_cycle_e2e():
                 "distill_temperature": 2.0,
             },
             "evaluation": {
-                "strengths": [0.3],
+                "robustness_strengths": [0.3],
                 "eval_split_ratio": 0.2,
             },
             "tracking": {
@@ -56,28 +58,30 @@ def test_4_phase_training_cycle_e2e():
         }
 
         pipeline = Pipeline(config)
-        
+
         # Run the full pipeline
         comparison = pipeline.run(
             hf_dataset="glue",
             hf_subset="sst2",
             export_dir=temp_dir
         )
-        
+
         # 1. Assert evaluation comparison dict has expected keys
         assert comparison is not None, "Evaluation comparison should not be None"
         assert "metrics" in comparison, f"Missing metrics key: {comparison}"
-        
+
         # 2. Assert robustness_score > 0
         metrics = comparison.get("metrics", {})
         assert "robustness" in metrics, f"Robustness metrics missing. Got: {list(metrics.keys())}"
         robustness = metrics["robustness"]
-        
+
         trained_robustness = robustness.get("trained", {})
         auc_robustness = trained_robustness.get("auc_robustness")
-        assert auc_robustness is not None, f"AUC robustness missing. Trained stats: {trained_robustness}"
+        assert auc_robustness is not None, (
+            f"AUC robustness missing. Trained stats: {trained_robustness}"
+        )
         assert auc_robustness > 0.0, f"Robustness score should be > 0, got {auc_robustness}"
-        
+
         # 3. Assert model checkpoint saved at expected path
         # Pipeline.export() saves to export_dir which is temp_dir
         assert os.path.exists(os.path.join(temp_dir, "model.safetensors")) or \
@@ -85,6 +89,6 @@ def test_4_phase_training_cycle_e2e():
                "Model weights file not found in export directory"
         assert os.path.exists(os.path.join(temp_dir, "config.json")), \
                "Model config.json not found in export directory"
-               
+
     finally:
         shutil.rmtree(temp_dir, ignore_errors=True)
