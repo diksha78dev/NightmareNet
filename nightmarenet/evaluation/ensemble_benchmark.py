@@ -52,7 +52,13 @@ def _evaluate_model_worker(
 
     Runs in a separate process to ensure memory is freed after execution.
     """
-    def _get_cache_key(model: str, dataset: str, split: str, distortion_type: str, strength: float) -> str:
+    def _get_cache_key(
+        model: str,
+        dataset: str,
+        split: str,
+        distortion_type: str,
+        strength: float,
+    ) -> str:
         """Generate cache key for a specific evaluation tuple."""
         safe_model = model.replace('/', '_').replace('-', '_')
         return f"{safe_model}_{dataset}_{split}_{distortion_type}_{strength:.1f}.json"
@@ -88,19 +94,21 @@ def _evaluate_model_worker(
 
             accuracies = []
             for strength in strengths:
-                cache_key = _get_cache_key(model_name, dataset_name, dataset_split, distortion_type, strength)
+                cache_key = _get_cache_key(
+                    model_name, dataset_name, dataset_split, distortion_type, strength
+                )
                 cache_file = cache_dir / cache_key if cache_dir else None
-                
+
                 if cache_file and cache_file.exists() and not no_cache:
                     try:
-                        with open(cache_file, 'r', encoding='utf-8') as f:
+                        with open(cache_file, encoding='utf-8') as f:
                             cached_result = json.load(f)
                             accuracies.append(cached_result['accuracy'])
                             logger.info("Cache hit for %s at strength %.1f", model_name, strength)
                             continue
-                    except (json.JSONDecodeError, KeyError, IOError) as e:
+                    except (OSError, json.JSONDecodeError, KeyError) as e:
                         logger.warning("Corrupted cache file %s: %s, re-evaluating", cache_file, e)
-                
+
                 def distortion_fn(text, _s=strength, _dt=distortion_type):
                     return registry.apply(_dt, text, strength=_s, seed=42)
 
@@ -135,13 +143,13 @@ def _evaluate_model_worker(
                 metrics = classification_metrics(model, dataloader, device=device)
                 accuracy = metrics.get("accuracy", 0.0)
                 accuracies.append(accuracy)
-                
+
                 if cache_file and not no_cache:
                     try:
                         cache_file.parent.mkdir(parents=True, exist_ok=True)
                         with open(cache_file, 'w', encoding='utf-8') as f:
                             json.dump({'accuracy': accuracy}, f)
-                    except IOError as e:
+                    except OSError as e:
                         logger.warning("Failed to write cache file %s: %s", cache_file, e)
 
             from sklearn.metrics import auc as sklearn_auc
@@ -181,7 +189,12 @@ class EnsembleOrchestrator:
         # Validate with Pydantic
         self.config = EnsembleConfig(**raw_config)
 
-    def run(self, timeout_seconds: int = 300, output_dir: str = "./results", no_cache: bool = False) -> dict[str, Any]:
+    def run(
+        self,
+        timeout_seconds: int = 300,
+        output_dir: str = "./results",
+        no_cache: bool = False,
+    ) -> dict[str, Any]:
         """Run the ensemble benchmark suite.
 
         Args:

@@ -163,7 +163,7 @@ def cmd_benchmark(args: argparse.Namespace) -> int:
 
         output_dir = args.output if args.output else "./results"
         no_cache = getattr(args, "no_cache", False)
-        
+
         orchestrator = EnsembleOrchestrator(args.config)
         results = orchestrator.run(timeout_seconds=300, output_dir=output_dir, no_cache=no_cache)
 
@@ -564,7 +564,9 @@ def build_parser() -> argparse.ArgumentParser:
     bench_parser.add_argument("--model", default="distilbert-base-uncased")
     bench_parser.add_argument("--config", help="YAML config path for ensemble benchmarking")
     bench_parser.add_argument("--output", help="Output directory for ensemble benchmark results")
-    bench_parser.add_argument("--no-cache", action="store_true", help="Force re-evaluation without using cache")
+    bench_parser.add_argument(
+        "--no-cache", action="store_true", help="Force re-evaluation without using cache"
+    )
 
     # distort
     distort_parser = subparsers.add_parser("distort", help="Apply distortion to text")
