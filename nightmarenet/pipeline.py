@@ -173,14 +173,14 @@ class Pipeline:
 
     def _handle_cycle_end(self, event: dict) -> None:
         """Handle per-cycle evaluation and adaptive convergence detection."""
-        if self._trainer is not None and self._train_dl is not None:
+        if self._trainer is not None and self._eval_dl is not None:
             try:
                 metrics = evaluate_cycle(
                     model=self._trainer.model,
-                    dataloader=self._train_dl,
+                    dataloader=self._eval_dl,
                     tokenizer=self._trainer.tokenizer,
-                    base_dataset=self._dataset,
-                    distortion_fn=apply_text_distortions,
+                    base_dataset=self._eval_dataset,
+                    distortion_fn=self._distortion_fn,
                     text_column=self.config.get("dataset", {}).get("text_column", "text"),
                     max_length=self.config.get("model", {}).get("max_length", 128),
                     batch_size=self.config.get("training", {}).get("batch_size", 8),
