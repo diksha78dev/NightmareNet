@@ -22,7 +22,8 @@ export default function ScrollNavigator() {
   const [activeSection, setActiveSection] = useState("hero");
   const [isVisible, setIsVisible] = useState(false);
   const [isUserScrolling, setIsUserScrolling] = useState(true);
-  const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scrollLockTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isProgrammaticScrolling = useRef(false);
 
   useEffect(() => {
@@ -68,6 +69,7 @@ export default function ScrollNavigator() {
     return () => {
       window.removeEventListener("scroll", handleScroll);
       if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
+      if (scrollLockTimeout.current) clearTimeout(scrollLockTimeout.current);
     };
   }, []);
 
@@ -79,6 +81,9 @@ export default function ScrollNavigator() {
 
     // Immediately set active state to prevent hanging arrow visual locks
     setActiveSection(id);
+
+    // Clear any existing scroll lock timeout to prevent race condition
+    if (scrollLockTimeout.current) clearTimeout(scrollLockTimeout.current);
     isProgrammaticScrolling.current = true;
 
     const navbarOffset = 80;
@@ -90,7 +95,7 @@ export default function ScrollNavigator() {
     });
 
     // Release scroll lock once smooth animation completes
-    setTimeout(() => {
+    scrollLockTimeout.current = setTimeout(() => {
       isProgrammaticScrolling.current = false;
     }, 800);
   };
@@ -131,6 +136,7 @@ export default function ScrollNavigator() {
               disabled={currentIndex === 0}
               className="p-2 rounded-full hover:bg-zinc-800/80 text-zinc-400 hover:text-white transition-all disabled:opacity-10 disabled:pointer-events-none active:scale-90"
               title="Previous Section"
+              aria-label="Previous Section"
             >
               <ChevronUp size={18} className="max-md:-rotate-90" />
             </button>
@@ -179,6 +185,7 @@ export default function ScrollNavigator() {
               disabled={currentIndex === SECTIONS.length - 1}
               className="p-2 rounded-full hover:bg-zinc-800/80 text-zinc-400 hover:text-white transition-all disabled:opacity-10 disabled:pointer-events-none active:scale-90"
               title="Next Section"
+              aria-label="Next Section"
             >
               <ChevronDown size={18} className="max-md:-rotate-90" />
             </button>
