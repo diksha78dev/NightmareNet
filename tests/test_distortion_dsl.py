@@ -42,13 +42,13 @@ def test_chain_config_invalid_strength():
 
 def test_chain_config_invalid_condition():
     """Test that invalid conditions are rejected."""
-    with pytest.raises(ValueError, match="Condition must reference"):
+    with pytest.raises(ValueError, match="Condition must compare 'strength' variable"):
         ChainStep(engine="dream", strength=0.3, condition="foo > 0.5")
 
 
 def test_chain_config_empty_chain():
     """Test that empty chains are rejected."""
-    with pytest.raises(ValueError, match="at least one step"):
+    with pytest.raises(ValueError, match="at least 1 item"):
         ChainConfig(name="test", chain=[])
 
 
@@ -67,11 +67,11 @@ defaults:
 """
     with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
         f.write(yaml_content)
-        f.flush()
-        config = parse_chain_config(f.name, validate_engines=False)
-        assert config.name == "test_chain"
-        assert len(config.chain) == 1
-        Path(f.name).unlink()
+        temp_path = f.name
+    config = parse_chain_config(temp_path, validate_engines=False)
+    assert config.name == "test_chain"
+    assert len(config.chain) == 1
+    Path(temp_path).unlink()
 
 
 def test_parse_chain_config_invalid_yaml():
@@ -80,10 +80,10 @@ def test_parse_chain_config_invalid_yaml():
 
     with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
         f.write("invalid: yaml: content: [")
-        f.flush()
-        with pytest.raises(yaml.YAMLError):
-            parse_chain_config(f.name)
-        Path(f.name).unlink()
+        temp_path = f.name
+    with pytest.raises(yaml.YAMLError):
+        parse_chain_config(temp_path)
+    Path(temp_path).unlink()
 
 
 def test_parse_chain_config_unknown_engine():
@@ -96,10 +96,10 @@ chain:
 """
     with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
         f.write(yaml_content)
-        f.flush()
-        with pytest.raises(ValueError, match="Unknown engine"):
-            parse_chain_config(f.name, validate_engines=True)
-        Path(f.name).unlink()
+        temp_path = f.name
+    with pytest.raises(ValueError, match="Unknown engine"):
+        parse_chain_config(temp_path, validate_engines=True)
+    Path(temp_path).unlink()
 
 
 def test_validate_chain_config():
@@ -112,21 +112,21 @@ chain:
 """
     with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
         f.write(yaml_content)
-        f.flush()
-        is_valid, message = validate_chain_config(f.name)
-        assert is_valid is True
-        assert "valid" in message.lower()
-        Path(f.name).unlink()
+        temp_path = f.name
+    is_valid, message = validate_chain_config(temp_path)
+    assert is_valid is True
+    assert "valid" in message.lower()
+    Path(temp_path).unlink()
 
 
 def test_validate_chain_config_invalid():
     """Test validation with invalid config."""
     with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
         f.write("invalid: [")
-        f.flush()
-        is_valid, message = validate_chain_config(f.name)
-        assert is_valid is False
-        Path(f.name).unlink()
+        temp_path = f.name
+    is_valid, message = validate_chain_config(temp_path)
+    assert is_valid is False
+    Path(temp_path).unlink()
 
 
 def test_chain_executor_condition_always():
