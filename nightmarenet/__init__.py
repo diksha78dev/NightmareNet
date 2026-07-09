@@ -2,6 +2,8 @@
 
 __version__ = "0.2.0"
 
-from nightmarenet.pipeline import Pipeline
-from nightmarenet.evaluation.evaluator import Evaluator
-from nightmarenet.distortions.registry import get_registry
+from nightmarenet.distortions.registry import get_registry as get_registry
+from nightmarenet.evaluation.evaluator import Evaluator as Evaluator
+from nightmarenet.pipeline import Pipeline as Pipeline
+
+__all__ = ["Pipeline", "Evaluator", "get_registry", "__version__"]
