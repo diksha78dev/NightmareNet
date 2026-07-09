@@ -4,6 +4,7 @@
 
 **Deep Learning Adversarial Network for Image Synthesis**
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Adit-Jain-srm/NightmareNet)
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-EE4C2C?logo=pytorch&logoColor=white)](https://pytorch.org/)
 [![Deep Learning](https://img.shields.io/badge/Deep_Learning-GAN-FF6F00?logo=tensorflow)](https://en.wikipedia.org/wiki/Generative_adversarial_network)
@@ -236,6 +237,38 @@ Run the full 4-phase cycle from a YAML config.
 nightmarenet train --config configs/benchmark_sst2.yaml --output ./runs/sst2-v1
 ```
 
+#### Checkpoint Resume Support
+
+If a training run is interrupted (e.g. by `SIGINT` or a hardware fault), you can resume training from the last saved phase checkpoint. Checkpoints are automatically saved at the end of each phase.
+
+**Resume Command:**
+```bash
+nightmarenet train --config configs/benchmark_sst2.yaml --resume ./checkpoints/cycle1_dream
+```
+
+**YAML Config Option:**
+```yaml
+training:
+  resume_from: "./checkpoints/cycle1_dream"
+```
+
+**Checkpoint Structure & State Serialization:**
+Each checkpoint directory (e.g. `cycle1_dream`) contains:
+- `training_state.pt`: PyTorch serialized state dictionary containing:
+  - `optimizer_state_dict`: Optimizer weights and learning rate states.
+  - `scaler_state_dict`: GradScaler state dict for mixed-precision (AMP) training.
+  - `cycle`: Current cycle index (integer).
+  - `phase`: Current phase name (string).
+  - `history`: Accumulated loss and metric history of all preceding phases.
+  - `metadata`: Checkpoint creation timestamp, time string, and trainer class info.
+- Model weights (e.g., `model.safetensors` or PyTorch binaries) and tokenizer configuration.
+
+**Validation & Fallback Behavior:**
+- **Integrity Checks:** When resuming, the trainer validates that the checkpoint `start_phase` belongs to the configured phase order. A mismatch or corrupted state raises a `ValueError`.
+- **Optimizer Check:** The trainer checks if the parameter group structure of the current optimizer matches the saved checkpoint before loading. If they are incompatible, it logs a warning and skips loading the optimizer weights to prevent crashes.
+- **Fail-safe Loading:** If the `training_state.pt` file fails to load due to a `PickleError`, `KeyError`, or `RuntimeError` (e.g. corrupted file write), the trainer logs the error and gracefully starts with a fresh training history.
+- **History Preservation:** Restored history lists are deep-copied using `copy.deepcopy` to prevent in-place modifications from altering saved checkpoint data.
+
 ### `nightmarenet evaluate`
 
 Evaluate a trained model against multi-strength distortion sweeps.
@@ -333,7 +366,7 @@ If you use NightmareNet in academic work, please cite:
 ## Testing
 
 ```bash
-pytest tests/ -v --tb=short          # 288+ tests
+pytest --cov=nightmarenet --cov-report=term-missing tests/ -v --tb=short   # 502+ tests
 ruff check .                         # zero lint errors
 mypy nightmarenet/                   # type check
 cd frontend && npm run build         # production build
