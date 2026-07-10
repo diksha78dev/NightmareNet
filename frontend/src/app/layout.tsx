@@ -48,7 +48,7 @@ export const metadata: Metadata = {
     title: "NightmareNet — Autonomous AI Self-Improvement",
     description:
       "Dream & Nightmare cycles that force models to learn what matters.",
-    url: "https://frontend-aj5.vercel.app",
+    url: "/",
     siteName: "NightmareNet",
     locale: "en_US",
     type: "website",
