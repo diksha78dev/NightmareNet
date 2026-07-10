@@ -457,7 +457,7 @@ These are applied by maintainers at merge time based on quality. **Do not reques
 
 5. **Reference specific code in your approach.** When requesting assignment or discussing implementation, cite file paths and line numbers. "I'll modify `nightmarenet/training/phases.py:429-528` to add the distillation loss" is 10x better than "I'll implement the feature."
 
-6. **Small PRs merge fast.** If an issue is large, ask if it can be split. A 50-line PR that merges in 1 day is worth more than a 500-line PR stuck in review for a week.
+6. **Maintain a local learnings file.** If you plan to work on multiple issues, create a `LEARNINGS.md` in your local setup (gitignored) to track patterns, gotchas, and conventions you discover. This accelerates your second and third PRs dramatically - you won't repeat mistakes or re-read the same code twice.
 
 ---
 
