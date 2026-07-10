@@ -566,7 +566,6 @@ class Pipeline:
                     self._eval_dataset, self._trainer.tokenizer,
                     text_column, max_length, batch_size,
                 )
-               
                 self._dream_dl = _tokenize_dataset(
                     dream_data,
                     self._trainer.tokenizer,
