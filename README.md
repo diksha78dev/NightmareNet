@@ -29,7 +29,7 @@
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
 [![CI](https://img.shields.io/badge/CI-passing-brightgreen)](.github/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-434%2B%20passing-brightgreen)](#testing)
+[![Tests](https://img.shields.io/badge/tests-556%2B%20passing-brightgreen)](#testing)
 [![Python](https://img.shields.io/badge/python-3.9%E2%80%933.12-blue)](#installation)
 
 *Wake. Dream. Nightmare. Compress. Repeat.*
@@ -96,6 +96,46 @@ Run the full Wake -> Dream -> Nightmare -> Compress cycle on SST-2 in under 10 m
 > Dev hardware target is a 4 GB VRAM laptop GPU (RTX 3050 Ti). DistilBERT and DistilGPT-2 fit comfortably; GPT-2 (124M) requires gradient checkpointing + FP16.
 
 ---
+## Running the API + Dashboard Locally (Docker)
+
+The open-source version of NightmareNet currently supports running the **API** and **Frontend** locally. The `db`, `redis`, and `worker` services are included for future hosted functionality and are disabled by default.
+
+### Default (functional) setup
+
+Start the currently supported services:
+
+```bash
+docker compose up
+```
+
+or explicitly:
+
+```bash
+docker compose up api frontend
+```
+
+This starts only:
+
+- ✅ `api`
+- ✅ `frontend`
+
+### Hosted profile (planned infrastructure)
+
+To include the optional infrastructure services, enable the `hosted` profile:
+
+```bash
+docker compose --profile hosted up
+```
+
+This starts:
+
+- `api`
+- `frontend`
+- `db`
+- `redis`
+- `worker`
+
+> **Note:** The `db`, `redis`, and `worker` services are intended for the future hosted platform and are not required by the current open-source API. Running `docker compose up` without a profile starts only the functional services.
 
 ## What's Inside — 20 Panels of Capability
 
@@ -359,6 +399,7 @@ If you use NightmareNet in academic work, please cite:
 - **Sponsors** — GitHub Sponsors and OpenCollective links go here once the project moves out of pre-release
 
 > [!IMPORTANT]
+>Please read our [Code of Conduct](CODE_OF_CONDUCT.md) before contributing.
 > Research-first contributions are especially welcome. If you have measured results extending the 4-phase cycle to a new domain (vision, multimodal, code generation), open a Discussion thread. We aim to credit external research in the paper's acknowledgements.
 
 ---
@@ -366,7 +407,8 @@ If you use NightmareNet in academic work, please cite:
 ## Testing
 
 ```bash
-pytest --cov=nightmarenet --cov-report=term-missing tests/ -v --tb=short   # 502+ tests
+pytest --cov=nightmarenet --cov-report=term-missing tests/ -v --tb=short   # 558+ tests
+pytest -m slow tests/test_distortion_fuzz.py -v                            # 1000+ sample fuzz suite
 ruff check .                         # zero lint errors
 mypy nightmarenet/                   # type check
 cd frontend && npm run build         # production build

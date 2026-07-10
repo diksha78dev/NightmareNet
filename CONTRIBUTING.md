@@ -11,6 +11,8 @@ Thank you for helping improve NightmareNet. This project uses a **research-first
 1. **Star this repository** — It helps us gauge community interest and prioritize features.
 2. **Follow [@Adit-Jain-srm](https://github.com/Adit-Jain-srm)** — Stay updated on releases, related projects, and research.
 3. **Read this entire guide** — PRs that don't follow the coding standards or skip tests will be asked to revise.
+4.  **Please read our [Code of Conduct](CODE_OF_CONDUCT.md)** before contributing to help maintain a welcoming and respectful community.
+> Maintainers verify star/follow status before merging. PRs from accounts that haven't completed steps 1-2 will be asked to do so before review begins.
 
 ---
 
@@ -20,14 +22,14 @@ Thank you for helping improve NightmareNet. This project uses a **research-first
 2. [Opening issues](#opening-issues)
 3. [Issue assignment rules](#issue-assignment-rules)
 4. [Code philosophy](#code-philosophy)
-5. [Local development setup](#1-local-development-setup)
-6. [Architecture pointers](#2-architecture-pointers)
-7. [Adding a new distortion](#3-adding-a-new-distortion)
-8. [Coding standards](#4-coding-standards)
-9. [Documentation](#5-documentation)
-10. [PR checklist](#6-pr-checklist)
-11. [ECSoC'26 Contributors](#7-ecsoc26-contributors)
-12. [Where to ask for help](#8-where-to-ask-for-help)
+5. [Local development setup](#local-development-setup)
+6. [Architecture pointers](#architecture-pointers)
+7. [Adding a new distortion](#adding-a-new-distortion)
+8. [Coding standards](#coding-standards)
+9. [Documentation](#documentation)
+10. [PR checklist](#pr-checklist)
+11. [ECSoC'26 Contributors](#ecsoc26-contributors)
+12. [Where to ask for help](#where-to-ask-for-help)
 
 ---
 
@@ -163,7 +165,7 @@ Any PR that changes the frontend must include:
 
 ---
 
-## 1. Local development setup
+## Local development setup
 
 ### Prerequisites
 
@@ -210,7 +212,7 @@ pre-commit run --all-files
 ### Verify the environment
 
 ```bash
-pytest --cov=nightmarenet --cov-report=term-missing tests/ -v --tb=short   # 502+ tests, all should pass
+pytest --cov=nightmarenet --cov-report=term-missing tests/ -v --tb=short   # 522+ tests, all should pass
 ruff check .                         # zero errors expected
 mypy nightmarenet/                   # type-check the OSS core
 ```
@@ -234,7 +236,7 @@ Hit `http://127.0.0.1:8000/api/v1/health` to confirm.
 
 ---
 
-## 2. Architecture pointers
+## Architecture pointers
 
 NightmareNet has a strict OSS / hosted boundary. Treat it as a hard constraint when adding code.
 
@@ -265,7 +267,7 @@ NightmareNet has a strict OSS / hosted boundary. Treat it as a hard constraint w
 
 ---
 
-## 3. Adding a new distortion
+## Adding a new distortion
 
 Distortions are first-class plugins. The full walkthrough is in [`notebooks/03_custom_distortions.ipynb`](notebooks/03_custom_distortions.ipynb); the short version follows.
 
@@ -316,7 +318,7 @@ Mirror the package layout under `tests/`. At minimum:
 
 ---
 
-## 4. Coding standards
+## Coding standards
 
 ### Python
 
@@ -350,10 +352,13 @@ Mirror the package layout under `tests/`. At minimum:
 - Conventional commits: `feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `chore:`, `perf:`.
 - One concern per commit. Squash exploratory commits before pushing.
 - Branch names: `feat/<short-slug>`, `fix/<short-slug>`, `docs/<short-slug>`.
+- **All PRs target `main`** unless the issue specifies otherwise.
+- **Do not force-push** to PR branches. Push review fixes as new commits so reviewers can see incremental changes. Maintainers will squash on merge.
+- Signed commits are not required but are appreciated.
 
 ---
 
-## 5. Documentation
+## Documentation
 
 All PRs that change user-facing behavior **must** update relevant documentation:
 
@@ -368,7 +373,7 @@ Good documentation is as important as good code. If you're unsure what to update
 
 ---
 
-## 6. PR checklist
+## PR checklist
 
 > **CI runs `ruff check .` on every PR and will block merge if there are lint errors.** Run it locally before pushing to avoid failed checks.
 
@@ -398,7 +403,7 @@ CI mirrors the local checks plus a security scan. Merging is blocked on a green 
 
 ---
 
-## 7. ECSoC'26 Contributors
+## ECSoC'26 Contributors
 
 This section applies to contributors participating in the **ECSoC'26** open-source track.
 
@@ -415,7 +420,7 @@ These are applied by maintainers at merge time based on quality. **Do not reques
 
 ### Rules for ECSoC'26 Participants
 
-1. **Maximum 5 concurrent assignments.** You can be assigned to at most 5 open issues at any time. Finish and deliver before requesting more.
+1. **Maximum 3 concurrent assignments without an open PR.** Once you have an open PR on an issue, it no longer counts toward the limit. Finish and deliver before requesting more.
 
 2. **No spam or AI slop.** PRs that are clearly unreviewed AI output (hallucinated APIs, untested code, copy-pasted without understanding) will be closed immediately and may result in disqualification from the program.
 
@@ -442,14 +447,13 @@ These are applied by maintainers at merge time based on quality. **Do not reques
 
 ---
 
-## 8. Where to ask for help
+## Where to ask for help
 
 - **GitHub Discussions** — `https://github.com/Adit-Jain-srm/NightmareNet/discussions`
   - `q-and-a` for "how do I..." questions
   - `ideas` for feature proposals (RFC threads welcome)
   - `research` for paper-related discussion, benchmark proposals, citation requests
 - **GitHub Issues** — bug reports and concrete tasks
-- **Discord** — `https://discord.gg/nightmarenet` *(launching with Sprint 8)*; channels for `#dev`, `#research`, `#hosted-platform`, `#help`
 - **Direct contact** — for security disclosures, email the maintainers per [`SECURITY.md`](SECURITY.md). Do **not** open public issues for vulnerabilities.
 
 We respond fastest to issues that include a minimal reproducible example, the relevant config snippet, and the output of `pip list | findstr nightmarenet` (or `pip freeze | grep nightmarenet` on Unix).
