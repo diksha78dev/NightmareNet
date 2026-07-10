@@ -61,7 +61,7 @@ def _evaluate_model_worker(
     ) -> str:
         """Generate cache key for a specific evaluation tuple."""
         safe_model = model.replace('/', '_').replace('-', '_')
-        return f"{safe_model}_{dataset}_{split}_{distortion_type}_{strength:.1f}.json"
+        return f"{safe_model}_{dataset}_{split}_{distortion_type}_{strength:g}.json"
     from datasets import load_dataset
     from torch.utils.data import DataLoader
 

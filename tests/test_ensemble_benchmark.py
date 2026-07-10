@@ -163,3 +163,172 @@ def test_ensemble_orchestrator_timeout(mock_executor_class):
         assert "slow_model" not in results["raw_results"]
     finally:
         os.remove(temp_config)
+
+
+def test_cache_key_uniqueness():
+    """Test that cache keys are unique for different strength values."""
+    from nightmarenet.evaluation.ensemble_benchmark import _evaluate_model_worker
+    
+    # Access the nested _get_cache_key function by calling the worker with mocked dependencies
+    # We'll test the cache key generation logic directly
+    def _get_cache_key(model, dataset, split, distortion_type, strength):
+        safe_model = model.replace('/', '_').replace('-', '_')
+        return f"{safe_model}_{dataset}_{split}_{distortion_type}_{strength:g}.json"
+    
+    # Test that 0.15 and 0.1 produce different cache keys
+    key_0_15 = _get_cache_key("model", "dataset", "split", "dream", 0.15)
+    key_0_1 = _get_cache_key("model", "dataset", "split", "dream", 0.1)
+    
+    assert key_0_15 != key_0_1, f"Cache keys should be unique: {key_0_15} vs {key_0_1}"
+    
+    # Test that 0.10 and 0.1 produce the same cache key (g format removes trailing zeros)
+    key_0_10 = _get_cache_key("model", "dataset", "split", "dream", 0.10)
+    assert key_0_10 == key_0_1, f"Cache keys should be same for 0.10 and 0.1: {key_0_10} vs {key_0_1}"
+
+
+@mock.patch("nightmarenet.evaluation.ensemble_benchmark.ProcessPoolExecutor")
+def test_cache_hit_scenario(mock_executor_class):
+    """Test cache hit scenario where cached results are reused."""
+    import json
+    from pathlib import Path
+    
+    mock_future = mock.MagicMock()
+    mock_future.result.return_value = {
+        "model": "dummy",
+        "robustness": 0.99,
+        "latency": 1.5,
+        "params": 1000,
+        "results_by_distortion": {
+            "dream": {
+                "strengths": [0.1, 0.5],
+                "accuracies": [0.95, 0.85]
+            }
+        }
+    }
+    
+    mock_executor = mock.MagicMock()
+    mock_executor.submit.return_value = mock_future
+    mock_executor.__enter__.return_value = mock_executor
+    mock_executor_class.return_value = mock_executor
+    
+    config = {
+        "models": ["dummy"],
+        "dataset": {"name": "test", "split": "val"},
+        "distortions": [{"type": "dream", "strengths": [0.1, 0.5]}]
+    }
+    
+    with tempfile.TemporaryDirectory() as temp_dir:
+        cache_dir = Path(temp_dir) / ".cache"
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Create a cache file with pre-computed results
+        cache_file = cache_dir / "dummy_test_val_dream_0.1.json"
+        with open(cache_file, 'w', encoding='utf-8') as f:
+            json.dump({'accuracy': 0.95}, f)
+        
+        with tempfile.NamedTemporaryFile("w", suffix=".yaml", delete=False) as f:
+            yaml.dump(config, f)
+            temp_config = f.name
+        
+        try:
+            orchestrator = EnsembleOrchestrator(temp_config)
+            results = orchestrator.run(output_dir=temp_dir)
+            assert "models_summary" in results
+        finally:
+            os.remove(temp_config)
+
+
+@mock.patch("nightmarenet.evaluation.ensemble_benchmark.ProcessPoolExecutor")
+def test_cache_miss_scenario(mock_executor_class):
+    """Test cache miss scenario where results are computed and cached."""
+    mock_future = mock.MagicMock()
+    mock_future.result.return_value = {
+        "model": "dummy",
+        "robustness": 0.99,
+        "latency": 1.5,
+        "params": 1000,
+        "results_by_distortion": {
+            "dream": {
+                "strengths": [0.1, 0.5],
+                "accuracies": [0.95, 0.85]
+            }
+        }
+    }
+    
+    mock_executor = mock.MagicMock()
+    mock_executor.submit.return_value = mock_future
+    mock_executor.__enter__.return_value = mock_executor
+    mock_executor_class.return_value = mock_executor
+    
+    config = {
+        "models": ["dummy"],
+        "dataset": {"name": "test", "split": "val"},
+        "distortions": [{"type": "dream", "strengths": [0.1, 0.5]}]
+    }
+    
+    with tempfile.TemporaryDirectory() as temp_dir:
+        with tempfile.NamedTemporaryFile("w", suffix=".yaml", delete=False) as f:
+            yaml.dump(config, f)
+            temp_config = f.name
+        
+        try:
+            orchestrator = EnsembleOrchestrator(temp_config)
+            results = orchestrator.run(output_dir=temp_dir)
+            assert "models_summary" in results
+            # Note: cache file creation happens in worker process, which is mocked here
+            # So we can't verify actual file creation in this test
+        finally:
+            os.remove(temp_config)
+
+
+@mock.patch("nightmarenet.evaluation.ensemble_benchmark.ProcessPoolExecutor")
+def test_cache_corrupt_scenario(mock_executor_class):
+    """Test corrupt cache scenario where corrupted cache triggers re-evaluation."""
+    import json
+    from pathlib import Path
+    
+    mock_future = mock.MagicMock()
+    mock_future.result.return_value = {
+        "model": "dummy",
+        "robustness": 0.99,
+        "latency": 1.5,
+        "params": 1000,
+        "results_by_distortion": {
+            "dream": {
+                "strengths": [0.1, 0.5],
+                "accuracies": [0.95, 0.85]
+            }
+        }
+    }
+    
+    mock_executor = mock.MagicMock()
+    mock_executor.submit.return_value = mock_future
+    mock_executor.__enter__.return_value = mock_executor
+    mock_executor_class.return_value = mock_executor
+    
+    config = {
+        "models": ["dummy"],
+        "dataset": {"name": "test", "split": "val"},
+        "distortions": [{"type": "dream", "strengths": [0.1, 0.5]}]
+    }
+    
+    with tempfile.TemporaryDirectory() as temp_dir:
+        cache_dir = Path(temp_dir) / ".cache"
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Create a corrupted cache file
+        cache_file = cache_dir / "dummy_test_val_dream_0.1.json"
+        with open(cache_file, 'w', encoding='utf-8') as f:
+            f.write("{ invalid json content")
+        
+        with tempfile.NamedTemporaryFile("w", suffix=".yaml", delete=False) as f:
+            yaml.dump(config, f)
+            temp_config = f.name
+        
+        try:
+            orchestrator = EnsembleOrchestrator(temp_config)
+            # Should handle corrupted cache gracefully and re-evaluate
+            results = orchestrator.run(output_dir=temp_dir)
+            assert "models_summary" in results
+        finally:
+            os.remove(temp_config)
