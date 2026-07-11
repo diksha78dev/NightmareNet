@@ -132,15 +132,16 @@ class WakePhase:
             )
             total_loss += avg_epoch_loss
 
-        if self.callback_manager is not None:
-            self.callback_manager.emit(
-                TrainingEvent(
-                    event_type=EventType.EPOCH_END,
-                    phase="wake",
-                    epoch=epoch + 1,
-                    metrics={"avg_loss": avg_epoch_loss},
+            if self.callback_manager is not None:
+                self.callback_manager.emit(
+                    TrainingEvent(
+                        event_type=EventType.EPOCH_END,
+                        phase="wake",
+                        epoch=epoch + 1,
+                        metrics={"avg_loss": avg_epoch_loss},
+                    )
                 )
-            )
+
 
         return {
             "phase": "wake",
@@ -304,18 +305,18 @@ class DreamPhase:
             total_loss += avg_epoch_loss
             total_kl += avg_epoch_kl
 
-        if self.callback_manager is not None:
-            self.callback_manager.emit(
-                TrainingEvent(
-                    event_type=EventType.EPOCH_END,
-                    phase="dream",
-                    epoch=epoch + 1,
-                    metrics={
-                        "avg_loss": avg_epoch_loss,
-                        "avg_kl_loss": avg_epoch_kl,
-                    },
+            if self.callback_manager is not None:
+                self.callback_manager.emit(
+                    TrainingEvent(
+                        event_type=EventType.EPOCH_END,
+                        phase="dream",
+                        epoch=epoch + 1,
+                        metrics={
+                            "avg_loss": avg_epoch_loss,
+                            "avg_kl_loss": avg_epoch_kl,
+                        },
+                    )
                 )
-            )
 
         return {
             "phase": "dream",
