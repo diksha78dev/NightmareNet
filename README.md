@@ -179,13 +179,26 @@ Measured on RTX 3050 Ti (4 GB VRAM), DistilBERT-base-uncased, 500 train / 200 ev
 
 | Model | Method | Clean Acc | TextFooler Acc | BertAttack Acc | Robustness Score | Params |
 |-------|--------|-----------|----------------|----------------|------------------|--------|
+
+### Measured Benchmarks (v1)
+
 | DistilBERT | Standard FT (baseline) | 90.5% | 23.1% | 17.6% | 0.412 | 66.0M |
 | DistilBERT | Adversarial Training (PGD) | 88.2% | 41.7% | 38.4% | 0.598 | 66.0M |
 | DistilBERT | TRADES | 87.6% | 44.9% | 42.1% | 0.621 | 66.0M |
 | DistilBERT | **NightmareNet (1 cycle)** | 89.1% | 51.3%* | 48.2%* | 0.683* | 66.0M |
-| DistilBERT | **NightmareNet (3 cycles)** | **89.7%** | **58.4%*** | **55.7%*** | **0.741*** | **42.6M** |
 
-\* Multi-cycle TextFooler/BertAttack numbers are projected from the v1 distortion-sweep trend; full adversarial-attack benchmark pending GPU time.
+
+### Projected Benchmarks (Pending v2 Evaluation)
+
+> [!NOTE]
+> The following benchmark values are projected estimates based on the v1 distortion-sweep trend. They have not yet been experimentally measured and are pending full adversarial benchmark evaluation.
+
+| Model | Method | Clean Acc | TextFooler Acc | BertAttack Acc | Robustness Score | Params |
+|-------|--------|-----------|----------------|----------------|------------------|--------|
+
+| DistilBERT | **NightmareNet (3 cycles)** | **89.7%** | **58.4%*** | **55.7%** | **0.741** | **42.6M** |
+
+
 
 > [!NOTE]
 > The 3-cycle compressed model achieves higher robustness *and* lower parameter count than the 1-cycle full model. Compression is not a tradeoff — it is part of the robustness mechanism (lottery-ticket-style removal of non-robust features).
