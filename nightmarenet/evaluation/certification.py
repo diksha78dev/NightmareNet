@@ -418,7 +418,22 @@ def certify_dataset(
         and the full list of per-sample CertificationResult objects under "results".
     """
     if len(dataset) == 0:
-        return {
+    return {
+        "metric": "certification",
+        "n_samples": 0,
+        "certified_radius_mean": 0.0,
+        "certified_radius_median": 0.0,
+        "certification_abstain_rate": 0.0,
+        "certified_accuracy": None,
+        "results": [],
+    }
+    if subset_size is not None:
+        dataset = dataset.shuffle(seed=42).select(range(min(subset_size, len(dataset))))
+        # subset_size may be 0 (or larger than 0 but the dataset still ends up
+        # empty), so re-check emptiness after selection rather than assuming the
+        # original dataset length still applies.
+        if len(dataset) == 0:
+          return {
             "metric": "certification",
             "n_samples": 0,
             "certified_radius_mean": 0.0,
@@ -426,29 +441,30 @@ def certify_dataset(
             "certification_abstain_rate": 0.0,
             "certified_accuracy": None,
             "results": [],
-        }
-
-    if subset_size is not None:
-        dataset = dataset.shuffle(seed=42).select(range(min(subset_size, len(dataset))))
-
-    per_sample_budget = None
+          }
     if certification_budget_total is not None:
-        # Distribute the total fairly and exactly: base passes per sample, with the
-        # remainder spread one-per-sample rather than forcing a minimum of 1 per sample
-        # regardless of budget (that would silently let a small budget total across many
-        # samples add up to far more than certification_budget_total).
-        base = certification_budget_total // len(dataset)
-        remainder = certification_budget_total % len(dataset)
-        per_sample_budgets = [base + 1 if i < remainder else base for i in range(len(dataset))]
-        logger.info(
-            "certification_budget_total=%d over %d samples -> %d-%d forward passes/sample",
-            certification_budget_total, len(dataset), base, base + (1 if remainder else 0),
+       # Distribute the total fairly and exactly: base passes per sample, with the
+       # remainder spread one-per-sample rather than forcing a minimum of 1 per sample
+       # regardless of budget (that would silently let a small budget total across many
+       # samples add up to far more than certification_budget_total).
+       base = certification_budget_total // len(dataset)
+       remainder = certification_budget_total % len(dataset)
+       per_sample_budgets = [base + 1 if i < remainder else base for i in range(len(dataset))]
+       logger.info(
+          "certification_budget_total=%d over %d samples -> %d-%d forward passes/sample",
+           certification_budget_total, len(dataset), base, base + (1 if remainder else 0),
         )
     else:
-        per_sample_budgets = [None] * len(dataset)
+       per_sample_budgets = [None] * len(dataset)
 
     results: list[CertificationResult] = []
-    for example, sample_budget in zip(tqdm(dataset, desc="Certifying samples (randomized smoothing)"), per_sample_budgets):
+    for example, sample_budget in zip(
+      tqdm(
+        dataset,
+        desc="Certifying samples (randomized smoothing)",
+      ),
+      per_sample_budgets,
+    ):
         label = example.get(label_column) if label_column else None
         result = certify_sample(
             model,
