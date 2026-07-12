@@ -347,7 +347,7 @@ NightmareNet supports pushing your hardened, robust models directly to the Huggi
 Uploads a local model directory alongside an auto-generated model card:
 ```bash
 nightmarenet push --model ./output/best --hub your-username/nightmarenet-model-robust --metadata ./output/metadata.yaml
-
+```
 ---
 
 ## Use Cases

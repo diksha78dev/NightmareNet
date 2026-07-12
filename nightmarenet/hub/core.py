@@ -52,7 +52,7 @@ This model has been processed and robustified using the NightmareNet self-improv
 ## Reproducibility Metadata Configuration
 ```yaml
 {yaml.safe_dump(metadata.get('config', {}), default_flow_style=False)}
-"""
+``` """
 
 @require_hf_hub
 def push_model(model_dir: str, repo_id: str, metadata_path: Optional[str] = None) -> None:
@@ -70,7 +70,10 @@ def push_model(model_dir: str, repo_id: str, metadata_path: Optional[str] = None
     api = HfApi(token=token)
     
     metadata: Dict[str, Any] = {}
-    if metadata_path and Path(metadata_path).exists():
+    if metadata_path:
+        metadata_file = Path(metadata_path)
+        if not metadata_file.exists():
+            raise FileNotFoundError(f"Metadata file not found: {metadata_path}")
         with open(metadata_path, 'r', encoding='utf-8') as f:
             metadata = yaml.safe_load(f) or {}
 

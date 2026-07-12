@@ -94,6 +94,10 @@ tracking:
   log_dir: logs/runs
   output_dir: "results"
   output_format: "json"  # "json" or "markdown"
+  # Optional: Automatically push the best hardened model checkpoint to HuggingFace Hub
+  # upon successful completion of the full Wake/Dream/Nightmare/Compress pipeline cycle.
+  # Leave blank or omit to disable auto-push.
+  auto_push_hub: ""
 
 # Observability — structured logging and OpenTelemetry
 # Install optional extras: pip install nightmarenet[otel]
@@ -124,9 +128,3 @@ adaption:
   max_rows: 5000          # Subset for cost control
   column_mapping:
     prompt: "text"
-
-tracking:
-  # Optional: Automatically push the best hardened model checkpoint to HuggingFace Hub 
-  # upon successful completion of the full Wake/Dream/Nightmare/Compress pipeline cycle.
-  # Leave blank or omit to disable auto-push.
-  auto_push_hub:

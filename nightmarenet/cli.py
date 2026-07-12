@@ -653,9 +653,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     # pull command parsing mapping
     pull_parser = subparsers.add_parser("pull", help="Download a pre-hardened model snapshot layout locally")
-    pull_parser.add_argument("repo", help="Target HuggingFace source space handle (org/repo)")
+    pull_parser.add_argument("--repo", required=True, help="Target HuggingFace source space handle (org/repo)")
     pull_parser.add_argument("--output", required=True, help="Target output directory vector to write weights artifacts into")
-
 
                                                                                     
     return parser

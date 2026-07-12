@@ -6,10 +6,10 @@ def require_hf_hub(func: Callable[..., Any]) -> Callable[..., Any]:
     def wrapper(*args: Any, **kwargs: Any) -> Any:
         try:
             import huggingface_hub
-        except ImportError:
+        except ImportError as e:
             raise ImportError(
                 "The 'huggingface_hub' library is required for this feature. "
                 "Please install it using: pip install huggingface_hub"
-            )
+            ) from e
         return func(*args, **kwargs)
     return wrapper
