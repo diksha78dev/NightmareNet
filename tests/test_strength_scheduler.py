@@ -1,17 +1,21 @@
 import os
 
+import pytest
 import torch
 from datasets import Dataset
 from torch.utils.data import DataLoader
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-# Configure offline mode globally to prevent HF hub connection timeouts
-os.environ["TRANSFORMERS_OFFLINE"] = "1"
-os.environ["HF_HUB_OFFLINE"] = "1"
-os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
-
 from nightmarenet.data.generator import DreamDatasetGenerator, NightmareDatasetGenerator
 from nightmarenet.training.trainer import Trainer
+
+
+@pytest.fixture(autouse=True)
+def _offline_mode(monkeypatch):
+    """Prevent HF hub connections during tests."""
+    monkeypatch.setenv("TRANSFORMERS_OFFLINE", "1")
+    monkeypatch.setenv("HF_HUB_OFFLINE", "1")
+    monkeypatch.setenv("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
 
 
 def _make_tiny_dataset(n: int = 10) -> Dataset:
