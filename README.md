@@ -5,9 +5,9 @@
 **Deep Learning Adversarial Network for Image Synthesis**
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Adit-Jain-srm/NightmareNet)
-[![Python](https://img.shields.io/badge/Python-3.9+-3776AB?logo=python&logoColor=white)]
+[![Python](https://img.shields.io/badge/Python-3.9+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-EE4C2C?logo=pytorch&logoColor=white)](https://pytorch.org/)
-[![Adversarial Robustness](https://img.shields.io/badge/Adversarial_Robustness-Training-EE4C2C?logo=pytorch&logoColor=white)]
+[![Adversarial Robustness](https://img.shields.io/badge/Adversarial_Robustness-Training-EE4C2C?logo=pytorch&logoColor=white)](https://arxiv.org/abs/1706.06083)
 [![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](LICENSE)
 [![Last Commit](https://img.shields.io/github/last-commit/Adit-Jain-srm/NightmareNet)](https://github.com/Adit-Jain-srm/NightmareNet)
 
@@ -196,10 +196,8 @@ Measured on RTX 3050 Ti (4 GB VRAM), DistilBERT-base-uncased, 500 train / 200 ev
 | DistilBERT | **NightmareNet (1 cycle)** | 89.1% | 51.3% | 48.2% | 0.683 | 66.0M |
 | DistilBERT | **NightmareNet (3 cycles)** | **89.7%** | **58.4%** | **55.7%** | **0.741** | **42.6M** |
 
-
-
 > [!NOTE]
-> The 3-cycle compressed model achieves higher robustness *and* lower parameter count than the 1-cycle full model. Compression is not a tradeoff — it is part of the robustness mechanism (lottery-ticket-style removal of non-robust features).
+> The 3-cycle compressed model achieves higher robustness *and* lower parameter count than the 1-cycle full model. Compression is not a tradeoff - it is part of the robustness mechanism (lottery-ticket-style removal of non-robust features).
 
 ---
 
@@ -403,9 +401,8 @@ If you use NightmareNet in academic work, please cite:
 
 ## Community
 
-- **Discord** — `https://discord.gg/nightmarenet` *(launching with Sprint 8)*
-- **GitHub Discussions** — `https://github.com/Adit-Jain-srm/NightmareNet/discussions` for design questions, RFC proposals, paper review threads
-- **Issues** — bug reports and feature requests welcome
+- **GitHub Discussions** - `https://github.com/Adit-Jain-srm/NightmareNet/discussions` for design questions, RFC proposals, paper review threads
+- **Issues** - bug reports and feature requests welcome
 - **Contributing** — see [`CONTRIBUTING.md`](CONTRIBUTING.md) for local dev setup, architecture pointers, plugin authoring, and the PR checklist
 - **Sponsors** — GitHub Sponsors and OpenCollective links go here once the project moves out of pre-release
 
