@@ -78,6 +78,10 @@ hosted = [
     "pyjwt>=2.8.0",
     "psycopg[binary]>=3.1.0",
 ]
+search = [
+    "sentence-transformers>=3.0.0",
+    "faiss-cpu>=1.8.0",
+]
 adaption = [
     "adaption>=0.1.0",
 ]
@@ -95,6 +99,7 @@ nightmarenet = "nightmarenet.cli:main"
 nightmarenet-train = "scripts.train:main"
 nightmarenet-generate = "scripts.generate_data:main"
 nightmarenet-evaluate = "scripts.evaluate:main"
+nightmarenet-reindex-search = "nightmarenet_server.search.reindex:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -142,4 +147,4 @@ follow_imports = "skip"
 follow_imports_for_stubs = false
 
 [tool.setuptools.packages.find]
-include = ["nightmarenet*", "scripts"]
+include = ["nightmarenet*", "nightmarenet_server*", "scripts"]
