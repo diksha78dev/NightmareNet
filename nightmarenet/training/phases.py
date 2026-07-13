@@ -561,6 +561,17 @@ class CompressionPhase:
 
         logger.info("Compression Phase - Method: %s, Ratio: %.2f", method, pruning_ratio)
 
+        # Snapshot teacher BEFORE pruning (for distillation)
+        distillation_enabled = self.config.get("distillation", False)
+        teacher_model = None
+        if distillation_enabled and dataloader is not None and optimizer is not None:
+            import copy
+            teacher_model = copy.deepcopy(self.model)
+            teacher_model.eval()
+            for param in teacher_model.parameters():
+                param.requires_grad = False
+            logger.info("Compression Phase - Teacher snapshot taken for distillation.")
+
         if method == "magnitude":
             try:
                 from nightmarenet.compression.pruning import MagnitudePruner
@@ -574,6 +585,26 @@ class CompressionPhase:
             logger.warning("Unknown pruning method '%s'; skipping.", method)
             stats = {"pruned_params": 0, "total_params": 0}
 
+        # Distillation step (RSLAD-style): pruned student learns from teacher
+        distillation_stats = {}
+        if teacher_model is not None:
+            from nightmarenet.compression.distillation import run_distillation
+
+            temperature = self.config.get("distillation_temperature", 4.0)
+            alpha = self.config.get("distillation_alpha", 0.7)
+            distillation_epochs = self.config.get("distillation_epochs", 1)
+            logger.info("Compression Phase - Running RSLAD-style distillation...")
+            distillation_stats = run_distillation(
+                teacher=teacher_model,
+                student=self.model,
+                dataloader=dataloader,
+                optimizer=optimizer,
+                device=self.device,
+                epochs=distillation_epochs,
+                temperature=temperature,
+                alpha=alpha,
+                scaler=self.scaler,
+            )
         # Optional fine-tuning after pruning
         if (
             self.config.get("finetune_after_prune", True)
@@ -632,4 +663,5 @@ class CompressionPhase:
             "method": method,
             "pruning_ratio": pruning_ratio,
             **stats,
+            **distillation_stats,
         }
