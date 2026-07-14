@@ -1145,4 +1145,3 @@ async def websocket_pipeline_progress(websocket: WebSocket, run_id: str):
             await websocket.close(code=1011)
         except Exception:
             pass
-

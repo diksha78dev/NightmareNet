@@ -805,4 +805,3 @@ class TestDemoEndpoint:
             w in insight_lower
             for w in ["resilient", "vulnerable"]
         )
-
