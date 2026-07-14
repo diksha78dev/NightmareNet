@@ -207,20 +207,22 @@ pre-commit run --all-files
 
 ### Verify the environment
 
-```bash
-pytest tests/ -v --tb=short          # 288+ tests, all should pass
-ruff check .                         # zero errors expected
-mypy nightmarenet/                   # type-check the OSS core
-```
+The Makefile mirrors exactly what CI runs — use it instead of memorizing
+individual commands:
+
+make check          # lint + typecheck + test (what CI runs on every PR)
+make test           # just pytest with coverage
+make lint           # just ruff
+make typecheck      # just mypy
+make format         # auto-fix formatting with ruff format
 
 If you also touched the dashboard:
 
-```bash
-cd frontend
-npm install
-npm run build                        # production build
-npm run dev                          # dev server on :3000
-```
+make frontend-build  # production build (cd frontend && npm ci && npm run build)
+make frontend-test   # frontend test suite
+
+# Or run everything, Python + frontend:
+make all
 
 ### Start the API for ad-hoc testing
 
@@ -369,15 +371,13 @@ Good documentation is as important as good code. If you're unsure what to update
 
 ## 6. PR checklist
 
-> **CI runs `ruff check .` on every PR and will block merge if there are lint errors.** Run it locally before pushing to avoid failed checks.
+> **CI runs `make check` on every PR and will block merge if it fails.** Run it locally before pushing to avoid failed checks.
 
 Before requesting review, confirm every box.
 
 - [ ] I have **starred the repo** and **followed [@Adit-Jain-srm](https://github.com/Adit-Jain-srm)**.
-- [ ] `pytest tests/ -v --tb=short` — green locally.
-- [ ] `ruff check .` — zero errors.
-- [ ] `mypy nightmarenet/` — no new errors.
-- [ ] If frontend changed: `cd frontend && npm run build` succeeds.
+- [ ] `make check` — green locally (runs lint + typecheck + test).
+- [ ] If frontend changed: `make frontend-build` succeeds.
 - [ ] No `from __future__ import annotations` added under `nightmarenet/api/`.
 - [ ] No new `nightmarenet/` import of a hosted-only library (`sqlalchemy`, `redis`, `celery`, `psycopg2`, `stripe`).
 - [ ] New code is type-annotated; new public APIs have Google-style docstrings.
