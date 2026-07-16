@@ -46,7 +46,6 @@ try:
         DistortionRequest,
         DistortionResponse,
         ErrorResponse,
-        GenericPipelineResponse,
         HealthResponse,
         PipelineCreateRequest,
         PipelineReportResponse,
@@ -58,6 +57,7 @@ try:
         TrainingConfigResponse,
         TrainingPhasePreview,
         UploadResponse,
+        WebhookTestResponse,
     )
 except ImportError as e:
     raise ImportError(
@@ -1020,7 +1020,7 @@ _TEST_WEBHOOK_BODY = Body(...)
 
 @app.post(
     "/api/v1/notifications/test-webhook",
-    response_model=GenericPipelineResponse,
+    response_model=WebhookTestResponse,
     responses={
         400: {"model": ErrorResponse},
         422: {"model": ErrorResponse},
@@ -1094,7 +1094,7 @@ async def test_webhook_endpoint(
             f"Test notification: {body.event_type} integration test.",
             details,
         )
-        return GenericPipelineResponse(success=True, message="Webhook test dispatched successfully")
+        return WebhookTestResponse(status="ok")
     except Exception as e:
         logger.exception("Test webhook failed: %s", e)
         raise HTTPException(

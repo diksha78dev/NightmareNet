@@ -378,13 +378,11 @@ class PipelineCancelRequest(BaseModel):
 class SettingsWebhooksRequest(BaseModel):
     """Request body for updating webhook settings."""
 
-    webhooks: list[dict[str, Any]] = Field(..., description="List of webhook configurations")
+    webhooks: list[WebhookConfigSchema] = Field(..., description="List of webhook configurations")
 
 
-class GenericPipelineResponse(BaseModel):
-    """Generic response for pipeline operations."""
-
-    success: bool = Field(..., description="Indicates if the operation was successful")
-    message: str = Field(..., description="Response message")
-    data: Optional[dict[str, Any]] = Field(default=None, description="Additional response data")
+class WebhookTestResponse(BaseModel):
+    """Response for testing webhooks, preserving legacy contract."""
+    
+    status: str = Field(default="ok")
     
