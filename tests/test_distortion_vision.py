@@ -142,4 +142,3 @@ def test_dream_distortions_single_channel():
         distorted = distortion.distort(img, strength=0.5, seed=42)
         assert distorted.shape == (1, 32, 32)
         assert torch.all(distorted >= 0.0) and torch.all(distorted <= 1.0)
-

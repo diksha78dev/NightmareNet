@@ -202,13 +202,13 @@ class VisionDistortionRegistry:
         self._discover_plugins()
 
     def _register_builtins(self) -> None:
-        from nightmarenet.distortions.vision.gaussian_noise import GaussianNoise
         from nightmarenet.distortions.vision.dream import (
             ColorJitter,
-            GeometricTransform,
             GaussianBlur,
+            GeometricTransform,
             JPEGCompression,
         )
+        from nightmarenet.distortions.vision.gaussian_noise import GaussianNoise
 
         noise_engine = GaussianNoise()
         self.register(
