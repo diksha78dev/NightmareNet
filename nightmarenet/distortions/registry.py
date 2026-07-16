@@ -239,9 +239,9 @@ class VisionDistortionRegistry:
                         'source': 'plugin',
                         'package': ep.dist.name if hasattr(ep, 'dist') and ep.dist else 'unknown',
                     })
-                    logger.info(f"Loaded vision distortion plugin '{ep.name}' from {ep.value}")
+                    logger.info("Loaded vision distortion plugin '%s' from %s", ep.name, ep.value)
             except Exception as e:
-                logger.warning(f"Failed to load vision distortion plugin '{ep.name}': {e}")
+                logger.warning("Failed to load vision distortion plugin '%s': %s", ep.name, e)
 
     def register(
         self,
