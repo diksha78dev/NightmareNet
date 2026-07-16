@@ -9,11 +9,10 @@ import torch
 import torch.nn as nn
 
 from nightmarenet.compression.pruning import (
-    MagnitudePruner,
     BottleneckWrapper,
+    MagnitudePruner,
     apply_bottleneck_to_model,
 )
-
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -113,7 +112,7 @@ class TestMagnitudePruner:
         MagnitudePruner(pruning_ratio=0.3).apply(model_a)
         MagnitudePruner(pruning_ratio=0.3).apply(model_b)
 
-        for (na, pa), (nb, pb) in zip(
+        for (na, pa), (_nb, pb) in zip(
             model_a.named_parameters(), model_b.named_parameters()
         ):
             assert torch.equal(pa, pb), f"mismatch at {na}"
