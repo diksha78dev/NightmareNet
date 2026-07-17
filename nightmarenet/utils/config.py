@@ -15,6 +15,59 @@ import yaml
 
 logger = logging.getLogger(__name__)
 
+
+def _levenshtein_distance(s1: str, s2: str) -> int:
+    """Compute the Levenshtein distance between two strings.
+
+    Args:
+        s1: First string.
+        s2: Second string.
+
+    Returns:
+        The minimum number of single-character edits (insertions, deletions,
+        or substitutions) required to change s1 into s2.
+    """
+    if len(s1) < len(s2):
+        return _levenshtein_distance(s2, s1)
+
+    if len(s2) == 0:
+        return len(s1)
+
+    previous_row = list(range(len(s2) + 1))
+    for i, c1 in enumerate(s1):
+        current_row = [i + 1]
+        for j, c2 in enumerate(s2):
+            insertions = previous_row[j + 1] + 1
+            deletions = current_row[j] + 1
+            substitutions = previous_row[j] + (c1 != c2)
+            current_row.append(min(insertions, deletions, substitutions))
+        previous_row = current_row
+
+    return previous_row[-1]
+
+
+def _find_closest_key(key: str, candidates: list[str], max_distance: int = 2) -> str | None:
+    """Find the closest matching key from candidates using Levenshtein distance.
+
+    Args:
+        key: The unknown key to find a suggestion for.
+        candidates: List of valid keys to compare against.
+        max_distance: Maximum edit distance to consider a match.
+
+    Returns:
+        The closest matching key if within max_distance, otherwise None.
+    """
+    closest = None
+    min_dist = max_distance + 1
+
+    for candidate in candidates:
+        dist = _levenshtein_distance(key, candidate)
+        if dist < min_dist:
+            min_dist = dist
+            closest = candidate
+
+    return closest if min_dist <= max_distance else None
+
 # Default configuration with all supported keys and their default values.
 DEFAULT_CONFIG: dict[str, Any] = {
     "model": {
@@ -266,6 +319,27 @@ def validate_config(config: dict) -> list[str]:
     return errors
 
 
+def _warn_unknown_keys(user_config: dict) -> None:
+    """Log warnings for unrecognized top-level configuration keys.
+
+    Args:
+        user_config: User-provided configuration dictionary.
+    """
+    valid_top_level_keys = set(DEFAULT_CONFIG.keys())
+    unknown_keys = set(user_config.keys()) - valid_top_level_keys
+
+    for unknown_key in unknown_keys:
+        suggestion = _find_closest_key(unknown_key, list(valid_top_level_keys))
+        if suggestion:
+            logger.warning(
+                "Unknown config key '%s' - did you mean '%s'?",
+                unknown_key,
+                suggestion,
+            )
+        else:
+            logger.warning("Unknown config key '%s'", unknown_key)
+
+
 def load_config(path: str) -> dict:
     """Load and validate a YAML configuration file.
 
@@ -299,6 +373,9 @@ def load_config(path: str) -> dict:
             f"Config file must contain a YAML mapping,"
             f" got {type(user_config).__name__}"
         )
+
+    # Warn about unknown top-level keys
+    _warn_unknown_keys(user_config)
 
     # Merge with defaults
     config = _deep_merge(DEFAULT_CONFIG, user_config)
