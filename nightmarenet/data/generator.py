@@ -161,9 +161,7 @@ class DreamDatasetGenerator:
             os.makedirs(save_path, exist_ok=True)
             dream_data.save_to_disk(save_path)
         except OSError as exc:
-            raise OSError(
-                f"Failed to save dream data to '{save_path}': {exc}"
-            ) from exc
+            raise OSError(f"Failed to save dream data to '{save_path}': {exc}") from exc
         logger.info("Dream data saved to %s", save_path)
         return dream_data
 
@@ -216,9 +214,7 @@ class NightmareDatasetGenerator:
             )
 
         if self.strength_min > self.strength_max:
-            logger.warning(
-                "strength_min > strength_max; schedule will decrease over batch."
-            )
+            logger.warning("strength_min > strength_max; schedule will decrease over batch.")
 
     def _compute_strengths(self, num_samples: int) -> list[float]:
         """Compute per-sample distortion strengths based on schedule.
@@ -402,9 +398,7 @@ class NightmareDatasetGenerator:
             os.makedirs(save_path, exist_ok=True)
             nightmare_data.save_to_disk(save_path)
         except OSError as exc:
-            raise OSError(
-                f"Failed to save nightmare data to '{save_path}': {exc}"
-            ) from exc
+            raise OSError(f"Failed to save nightmare data to '{save_path}': {exc}") from exc
         logger.info("Nightmare data saved to %s", save_path)
         return nightmare_data
 
