@@ -189,31 +189,43 @@ class TestUnknownKeyWarnings:
         cfg_file = tmp_path / "typo.yaml"
         cfg_data = {"model": {"name": "gpt2"}, "trainng": {"wake_epochs": 3}}
         cfg_file.write_text(yaml.dump(cfg_data))
-        
+
         with caplog.at_level(logging.WARNING):
             load_config(str(cfg_file))
-        
-        warning_messages = [record.message for record in caplog.records if record.levelname == "WARNING"]
+
+        warning_messages = [
+            record.message
+            for record in caplog.records
+            if record.levelname == "WARNING"
+        ]
         assert any("trainng" in msg and "training" in msg for msg in warning_messages)
 
     def test_unknown_key_without_suggestion_logged(self, tmp_path, caplog):
         cfg_file = tmp_path / "unknown.yaml"
         cfg_data = {"model": {"name": "gpt2"}, "xyz": {"foo": "bar"}}
         cfg_file.write_text(yaml.dump(cfg_data))
-        
+
         with caplog.at_level(logging.WARNING):
             load_config(str(cfg_file))
-        
-        warning_messages = [record.message for record in caplog.records if record.levelname == "WARNING"]
+
+        warning_messages = [
+            record.message
+            for record in caplog.records
+            if record.levelname == "WARNING"
+        ]
         assert any("xyz" in msg and "did you mean" not in msg for msg in warning_messages)
 
     def test_valid_keys_no_warning(self, tmp_path, caplog):
         cfg_file = tmp_path / "valid.yaml"
         cfg_data = {"model": {"name": "gpt2"}, "training": {"wake_epochs": 3}}
         cfg_file.write_text(yaml.dump(cfg_data))
-        
+
         with caplog.at_level(logging.WARNING):
             load_config(str(cfg_file))
-        
-        warning_messages = [record.message for record in caplog.records if record.levelname == "WARNING"]
+
+        warning_messages = [
+            record.message
+            for record in caplog.records
+            if record.levelname == "WARNING"
+        ]
         assert not any("Unknown config key" in msg for msg in warning_messages)
