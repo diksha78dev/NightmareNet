@@ -133,7 +133,7 @@ export default function TrainingLab() {
               className={`glass-card px-4 py-2.5 flex flex-col items-start cursor-pointer hover:border-${p.color}/20 transition-colors`}
             >
               <span className={`text-xs font-semibold text-${p.color}`}>{p.label}</span>
-              <span className="text-[10px] text-muted">{p.desc}</span>
+              <span className="text-[10px] text-slate-400">{p.desc}</span>
             </button>
           ))}
         </motion.div>
@@ -149,7 +149,7 @@ export default function TrainingLab() {
             {SLIDERS.map((s) => (
               <div key={s.key} className="glass-card p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <label htmlFor={`training-${s.key}`} className="text-xs font-mono text-muted uppercase tracking-wider">{s.label}</label>
+                  <label htmlFor={`training-${s.key}`} className="text-xs font-mono text-slate-400 uppercase tracking-wider">{s.label}</label>
                   <span className={`text-sm font-mono font-bold text-${s.accent}`}>
                     {s.format ? s.format(config[s.key] as number) : String(config[s.key])}
                   </span>
@@ -185,7 +185,7 @@ export default function TrainingLab() {
                     config[t.key] ? "!border-neural/20" : ""
                   }`}
                 >
-                  <span className="text-xs font-mono text-muted">{t.label}</span>
+                  <span className="text-xs font-mono text-slate-400">{t.label}</span>
                   <span aria-hidden="true" className={`w-8 h-4 rounded-full transition-colors ${config[t.key] ? "bg-neural" : "bg-surface"}`}>
                     <motion.div
                       animate={{ x: config[t.key] ? 16 : 0 }}
@@ -240,16 +240,16 @@ export default function TrainingLab() {
                       ) : (
                         <AlertTriangle aria-hidden="true" className="w-4 h-4 text-warning" />
                       )}
-                      <span className="text-xs font-mono text-muted">Config Summary</span>
+                      <span className="text-xs font-mono text-slate-400">Config Summary</span>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <div className="text-center p-2 rounded-lg bg-void/40">
                         <p className="text-lg font-bold font-mono text-neural">{result.total_phases}</p>
-                        <p className="text-[9px] text-muted uppercase">Phases</p>
+                        <p className="text-[9px] text-slate-400 uppercase">Phases</p>
                       </div>
                       <div className="text-center p-2 rounded-lg bg-void/40">
                         <p className="text-lg font-bold font-mono text-dream">{result.total_epochs}</p>
-                        <p className="text-[9px] text-muted uppercase">Epochs</p>
+                        <p className="text-[9px] text-slate-400 uppercase">Epochs</p>
                       </div>
                     </div>
                   </div>
@@ -257,7 +257,7 @@ export default function TrainingLab() {
                   {/* Timeline */}
                   {timeline && timeline.length > 0 && (
                     <div className="glass-card p-4 mb-4">
-                      <p className="text-xs font-mono text-muted uppercase tracking-wider mb-3">Phase Schedule</p>
+                      <p className="text-xs font-mono text-slate-400 uppercase tracking-wider mb-3">Phase Schedule</p>
                       <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
                         {timeline.map((p, i) => {
                           const Icon = PHASE_ICONS[p.phase] || Zap;
@@ -271,11 +271,11 @@ export default function TrainingLab() {
                               className="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-white/[0.02] transition-colors"
                             >
                               <div className={`w-1.5 h-1.5 rounded-full ${color}`} />
-                              <Icon aria-hidden="true" className="w-3 h-3 text-muted" />
+                              <Icon aria-hidden="true" className="w-3 h-3 text-slate-400" />
                               <span className="text-[10px] font-mono text-text-dim flex-1">
                                 C{p.cycle} {p.phase}
                               </span>
-                              <span className="text-[9px] font-mono text-muted">
+                              <span className="text-[9px] font-mono text-slate-400">
                                 {p.epochs}ep
                               </span>
                             </motion.div>
@@ -291,7 +291,7 @@ export default function TrainingLab() {
                       <p className="text-xs font-mono text-warning uppercase tracking-wider mb-2">Recommendations</p>
                       <ul className="space-y-1.5">
                         {result.recommendations.map((r, i) => (
-                          <li key={i} className="text-[11px] text-muted leading-relaxed flex gap-2">
+                          <li key={i} className="text-[11px] text-slate-400 leading-relaxed flex gap-2">
                             <AlertTriangle aria-hidden="true" className="w-3 h-3 text-warning shrink-0 mt-0.5" />
                             {r}
                           </li>
@@ -304,9 +304,9 @@ export default function TrainingLab() {
 
               {!result && !error && (
                 <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-card p-8 text-center">
-                  <Settings2 aria-hidden="true" className="w-8 h-8 text-muted mx-auto mb-3" />
+                  <Settings2 aria-hidden="true" className="w-8 h-8 text-slate-400 mx-auto mb-3" />
                   <p className="text-sm text-text-dim mb-1">Configure & Preview</p>
-                  <p className="text-xs text-muted">Adjust sliders and click preview to see the training schedule.</p>
+                  <p className="text-xs text-slate-400">Adjust sliders and click preview to see the training schedule.</p>
                 </motion.div>
               )}
             </AnimatePresence>

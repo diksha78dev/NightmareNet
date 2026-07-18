@@ -189,7 +189,7 @@ body {
 }
 
 /* Demo section light mode fixes */
-.light .text-muted { color: #475569; }
+.light .text-slate-400 { color: #475569; }
 .light .text-text-dim { color: #334155; }
 .light .text-text { color: #0f172a; }
 

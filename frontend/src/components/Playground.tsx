@@ -106,7 +106,7 @@ export default function Playground() {
                 onClick={() => { setMode(m); setResult(null); }}
                 aria-pressed={mode === m}
                 className={`relative flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium transition-colors duration-200 cursor-pointer ${
-                  mode === m ? "text-white" : "text-muted hover:text-text-dim"
+                  mode === m ? "text-white" : "text-slate-400 hover:text-text-dim"
                 }`}
               >
                 {mode === m && (
@@ -137,8 +137,8 @@ export default function Playground() {
           {/* Text input */}
           <div className="mb-5">
             <div className="flex items-center justify-between mb-2">
-              <label htmlFor="playground-input" className="text-xs font-mono text-muted uppercase tracking-wider">Input Text</label>
-              <button type="button" onClick={fillRandom} aria-label="Fill with a random sample" className="flex items-center gap-1 text-xs text-muted hover:text-neural transition-colors cursor-pointer">
+              <label htmlFor="playground-input" className="text-xs font-mono text-slate-400 uppercase tracking-wider">Input Text</label>
+              <button type="button" onClick={fillRandom} aria-label="Fill with a random sample" className="flex items-center gap-1 text-xs text-slate-400 hover:text-neural transition-colors cursor-pointer">
                 <RotateCcw aria-hidden="true" className="w-3 h-3" /> Random
               </button>
             </div>
@@ -148,7 +148,7 @@ export default function Playground() {
               value={text}
               onChange={(e) => { setText(e.target.value); setResult(null); }}
               rows={3}
-              className="w-full bg-void/60 border border-white/[0.06] rounded-xl px-4 py-3 text-sm font-mono text-text placeholder:text-muted/40 focus:outline-none focus:border-neural/30 focus:ring-1 focus:ring-neural/15 resize-none transition-colors"
+              className="w-full bg-void/60 border border-white/[0.06] rounded-xl px-4 py-3 text-sm font-mono text-text placeholder:text-slate-400 focus:outline-none focus:border-neural/30 focus:ring-1 focus:ring-neural/15 resize-none transition-colors"
               placeholder="Enter text to distort..."
             />
           </div>
@@ -156,7 +156,7 @@ export default function Playground() {
           {/* Strength slider */}
           <div className="mb-6">
             <div className="flex items-center justify-between mb-2">
-              <label htmlFor="playground-strength" className="text-xs font-mono text-muted uppercase tracking-wider">Strength</label>
+              <label htmlFor="playground-strength" className="text-xs font-mono text-slate-400 uppercase tracking-wider">Strength</label>
               <span className={`text-sm font-mono font-bold text-${accent}`}>{strength.toFixed(2)}</span>
             </div>
             <input
@@ -171,11 +171,11 @@ export default function Playground() {
               onChange={(e) => setStrength(parseFloat(e.target.value))}
               className={`slider-${accent}`}
             />
-            <div className="flex justify-between text-[10px] text-muted/50 mt-1 font-mono">
+            <div className="flex justify-between text-[10px] text-slate-400 mt-1 font-mono">
               <span>Gentle</span>
               <span>Aggressive</span>
             </div>
-            <p className="text-[10px] text-muted mt-2 leading-relaxed">
+            <p className="text-[10px] text-slate-400 mt-2 leading-relaxed">
               {strength <= 0.3
                 ? "💤 Typos, synonym swaps — gentle generalization pressure"
                 : strength <= 0.6
@@ -219,7 +219,7 @@ export default function Playground() {
             >
               <p className="text-nightmare font-medium text-sm mb-1">Connection Error</p>
               <p className="text-text-dim text-xs font-mono">{error}</p>
-              <p className="text-muted text-xs mt-2">
+              <p className="text-slate-400 text-xs mt-2">
                 Make sure the API is running at <code className="text-neural">localhost:8000</code>
               </p>
             </motion.div>
@@ -236,7 +236,7 @@ export default function Playground() {
             >
               <div className="flex items-center gap-2 mb-4">
                 <Sparkles aria-hidden="true" className={`w-4 h-4 text-${accent}`} />
-                <span className="text-xs font-mono text-muted uppercase tracking-wider">Distorted Output</span>
+                <span className="text-xs font-mono text-slate-400 uppercase tracking-wider">Distorted Output</span>
                 <span className={`ml-auto text-xs font-mono text-${accent}`}>
                   {result.distortion_type} @ {result.strength.toFixed(2)}
                 </span>
@@ -245,7 +245,7 @@ export default function Playground() {
               {/* Side by side */}
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <span className="text-[10px] text-muted/70 font-mono block mb-1.5">Original</span>
+                  <span className="text-[10px] text-slate-400/70 font-mono block mb-1.5">Original</span>
                   <div className="terminal">
                     <div className="p-3">
                       <p className="text-xs text-text-dim leading-relaxed">{result.original_text}</p>
@@ -274,12 +274,12 @@ export default function Playground() {
                 <button
                   type="button"
                   onClick={handoffToDashboard}
-                  className="flex items-center gap-1.5 text-xs text-muted hover:text-neural transition-colors cursor-pointer"
+                  className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-neural transition-colors cursor-pointer"
                   aria-label="Continue with this text in the live dashboard"
                 >
                   <ExternalLink aria-hidden="true" className="w-3 h-3" /> Open in dashboard
                 </button>
-                <a href="#resilience" className="flex items-center gap-1.5 text-xs text-muted hover:text-neural transition-colors cursor-pointer">
+                <a href="#resilience" className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-neural transition-colors cursor-pointer">
                   Use in Resilience Lab <ArrowRight aria-hidden="true" className="w-3 h-3" />
                 </a>
               </div>

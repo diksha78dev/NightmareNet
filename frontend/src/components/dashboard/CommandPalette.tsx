@@ -180,7 +180,7 @@ export function CommandPalette({
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Type a command or search…"
-                className="flex-1 bg-transparent text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none"
+                className="flex-1 bg-transparent text-sm text-slate-100 placeholder:text-slate-300 focus:outline-none"
                 aria-label="Command palette search"
               />
               <kbd className="rounded bg-white/[0.06] px-1.5 py-0.5 font-mono text-[10px] text-slate-400">
@@ -195,7 +195,7 @@ export function CommandPalette({
               ) : (
                 grouped.map(([group, list]) => (
                   <div key={group} className="px-2">
-                    <p className="px-2 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-widest text-slate-600">
+                    <p className="px-2 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-widest text-slate-300">
                       {group}
                     </p>
                     {list.map((it) => {

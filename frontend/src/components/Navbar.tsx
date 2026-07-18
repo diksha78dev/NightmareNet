@@ -160,7 +160,7 @@ export default function Navbar() {
                 className={`p-1.5 rounded-md transition-all cursor-pointer ${
                   theme === "light"
                     ? "bg-warning/20 text-warning"
-                    : "text-muted hover:text-text-dim"
+                    : "text-slate-400 hover:text-text-dim"
                 }`}
                 aria-label="Light mode"
               >
@@ -173,7 +173,7 @@ export default function Navbar() {
                 className={`p-1.5 rounded-md transition-all cursor-pointer ${
                   theme === "dark"
                     ? "bg-dream/20 text-dream"
-                    : "text-muted hover:text-text-dim"
+                    : "text-slate-400 hover:text-text-dim"
                 }`}
                 aria-label="Dark mode"
               >
@@ -186,7 +186,7 @@ export default function Navbar() {
                 className={`p-1.5 rounded-md transition-all cursor-pointer ${
                   theme === "system"
                     ? "bg-neural/20 text-neural"
-                    : "text-muted hover:text-text-dim"
+                    : "text-slate-400 hover:text-text-dim"
                 }`}
                 aria-label="System theme"
               >
@@ -205,7 +205,7 @@ export default function Navbar() {
               </svg>
               GitHub
             </a>
-            <span className="hidden sm:block text-[10px] font-mono text-muted/70 px-2 py-1 rounded-md bg-white/[0.03] border border-white/[0.04]">
+            <span className="hidden sm:block text-[10px] font-mono text-slate-400/70 px-2 py-1 rounded-md bg-white/[0.03] border border-white/[0.04]">
               v0.2.0
             </span>
 
@@ -319,7 +319,7 @@ export default function Navbar() {
 
               {/* Theme Toggle - Mobile */}
               <div className="mt-6 pt-4 border-t border-white/[0.05]">
-                <p className="text-xs font-mono text-muted uppercase tracking-wider mb-3">Theme</p>
+                <p className="text-xs font-mono text-slate-400 uppercase tracking-wider mb-3">Theme</p>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
@@ -328,7 +328,7 @@ export default function Navbar() {
                     className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer ${
                       theme === "light"
                         ? "bg-warning/20 text-warning border border-warning/30"
-                        : "text-muted hover:text-text-dim border border-white/[0.06]"
+                        : "text-slate-400 hover:text-text-dim border border-white/[0.06]"
                     }`}
                   >
                     <Sun aria-hidden="true" className="w-3.5 h-3.5" />
@@ -341,7 +341,7 @@ export default function Navbar() {
                     className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer ${
                       theme === "dark"
                         ? "bg-dream/20 text-dream border border-dream/30"
-                        : "text-muted hover:text-text-dim border border-white/[0.06]"
+                        : "text-slate-400 hover:text-text-dim border border-white/[0.06]"
                     }`}
                   >
                     <Moon aria-hidden="true" className="w-3.5 h-3.5" />
@@ -354,7 +354,7 @@ export default function Navbar() {
                     className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer ${
                       theme === "system"
                         ? "bg-neural/20 text-neural border border-neural/30"
-                        : "text-muted hover:text-text-dim border border-white/[0.06]"
+                        : "text-slate-400 hover:text-text-dim border border-white/[0.06]"
                     }`}
                   >
                     <Monitor aria-hidden="true" className="w-3.5 h-3.5" />
