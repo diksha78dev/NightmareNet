@@ -351,6 +351,96 @@ class Pipeline:
         self.metrics.comparison = self._context.comparison
         self.metrics.report_md = self._context.report_md
         self.metrics.quality_feedback = self._context.quality_feedback
+                # Trigger webhook for regression_detected
+                if isinstance(robustness_delta, (int, float)) and robustness_delta < 0:
+                    baseline_auc = robustness_metric.get("baseline", {}).get(
+                        "auc_robustness", "N/A"
+                    )
+                    trained_auc = robustness_metric.get("trained", {}).get("auc_robustness", "N/A")
+                    trigger_webhook(
+                        self.config,
+                        "regression_detected",
+                        (
+                            "Robustness regression detected after training! "
+                            f"Drop: {robustness_delta:+.4f}"
+                        ),
+                        {
+                            "run_id": self.run_id,
+                            "model": self.config.get("model", {}).get("name", "unknown"),
+                            "robustness_delta": f"{robustness_delta:+.4f}",
+                            "baseline_auc": baseline_auc,
+                            "trained_auc": trained_auc,
+                        },
+                    )
+
+                # Export robustness delta as an OTel metric
+                robustness_delta_val = comparison.get("robustness_delta")
+                if robustness_delta_val is not None:
+                    record_metric(
+                        "robustness_score",
+                        float(robustness_delta_val),
+                        {"model": self.config.get("model", {}).get("name", "unknown")},
+                    )
+
+                # ── Automated HuggingFace Hub Push Gating ──────────────────
+                tracking_cfg = self.config.get("tracking", {})
+                auto_push_repo = tracking_cfg.get("auto_push_hub")
+                if auto_push_repo:
+                    import os
+                    import tempfile
+
+                    import yaml
+
+                    from nightmarenet.hub.core import push_model
+
+                    logger.info("Pushing to Hub...")
+                    try:
+                        with tempfile.TemporaryDirectory() as tmp_dir:
+                            self.export(tmp_dir)
+
+                            # Extract metadata from comparison results and configuration
+                            pipeline_metadata = {
+                                "robustness_score": float(
+                                    robustness_delta if robustness_delta is not None else 0.0
+                                ),
+                                "training_config": self.config,
+                            }
+
+                            # Save the metadata temporarily inside the exported directory
+                            metadata_file_path = os.path.join(tmp_dir, "hub_metadata.yaml")
+                            with open(metadata_file_path, "w", encoding="utf-8") as f:
+                                yaml.safe_dump(pipeline_metadata, f)
+
+                            # Pass the generated metadata file to push_model
+                            push_model(
+                                model_dir=tmp_dir,
+                                repo_id=auto_push_repo,
+                                metadata_path=metadata_file_path,
+                            )
+                    except Exception as upload_err:
+                        logger.error("Push failed: %s", upload_err)
+
+                return comparison
+            except Exception as exc:
+                self._fail(f"Evaluation failed: {exc}")
+                raise
+
+    def _compute_quality_feedback(self, comparison: dict) -> None:
+        """Correlate Adaption quality with robustness improvement."""
+        if not self.metrics.adaption_quality:
+            return
+
+        robustness_delta = comparison.get("robustness_delta")
+        if robustness_delta is None:
+            for key in ("robustness", "avg_robustness", "mean_robustness"):
+                if key in comparison:
+                    robustness_delta = comparison[key]
+                    break
+
+        feedback: dict = {
+            "adaption_phases_optimized": list(self.metrics.adaption_quality.keys()),
+            "robustness_delta": robustness_delta,
+        }
 
         self.metrics.progress_pct = 100.0
         self.metrics.current_phase = "complete"

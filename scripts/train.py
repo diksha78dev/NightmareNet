@@ -107,15 +107,20 @@ def main():
         text_column = config.get("dataset", {}).get("text_column", "text")
         max_length = config.get("model", {}).get("max_length", 128)
         batch_size = config.get("training", {}).get("batch_size", 8)
-
+        label_column = config["dataset"].get("label_column")
         train_dataloader = _tokenize_dataset(
-            dataset_wrapper.train_data, trainer.tokenizer, text_column, max_length, batch_size
+            dataset_wrapper.train_data,
+            trainer.tokenizer,
+            text_column,
+            max_length,
+            batch_size,
+            label_column
         )
         dream_dataloader = _tokenize_dataset(
-            dream_data, trainer.tokenizer, text_column, max_length, batch_size
+            dream_data, trainer.tokenizer, text_column, max_length, batch_size, label_column
         )
         nightmare_dataloader = _tokenize_dataset(
-            nightmare_data, trainer.tokenizer, text_column, max_length, batch_size
+            nightmare_data, trainer.tokenizer, text_column, max_length, batch_size, label_column
         )
 
         # Run training

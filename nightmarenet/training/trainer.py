@@ -77,6 +77,7 @@ def _worker_init_fn(worker_id: int) -> None:
     import random
 
     import numpy as np
+
     worker_seed = (torch.initial_seed() + worker_id) % 2**32
     np.random.seed(worker_seed)
     random.seed(worker_seed)
@@ -88,17 +89,20 @@ def _tokenize_dataset(
     text_column: str,
     max_length: int,
     batch_size: int,
+    label_column: Optional[str] = None,
 ) -> DataLoader:
     """Tokenize a dataset and return a DataLoader."""
 
     def tokenize_fn(examples):
-        return tokenizer(
+        tokenized = tokenizer(
             examples[text_column],
             truncation=True,
             padding="max_length",
             max_length=max_length,
-            return_tensors="pt",
         )
+        if label_column is not None and label_column in examples:
+            tokenized["labels"] = examples[label_column]
+        return tokenized
 
     if isinstance(dataset, IterableDataset):
         tokenized = dataset.map(
@@ -107,11 +111,7 @@ def _tokenize_dataset(
             remove_columns=dataset.column_names if dataset.column_names else [text_column],
         )
         tokenized = tokenized.with_format("torch")
-        return DataLoader(
-            tokenized,
-            batch_size=batch_size,
-            worker_init_fn=_worker_init_fn
-        )
+        return DataLoader(tokenized, batch_size=batch_size, worker_init_fn=_worker_init_fn)
 
     tokenized = dataset.map(
         tokenize_fn,
@@ -121,10 +121,7 @@ def _tokenize_dataset(
     )
     tokenized.set_format("torch")
     return DataLoader(
-        tokenized,
-        batch_size=batch_size,
-        shuffle=True,
-        worker_init_fn=_worker_init_fn
+        tokenized, batch_size=batch_size, shuffle=True, worker_init_fn=_worker_init_fn
     )
 
 
@@ -456,9 +453,7 @@ class Trainer:
 
             finetune_after_prune = self.compression_config.get("finetune_after_prune", True)
             finetune_epochs = (
-                self.compression_config.get("finetune_epochs", 1)
-                if finetune_after_prune
-                else 0
+                self.compression_config.get("finetune_epochs", 1) if finetune_after_prune else 0
             )
 
             def get_opt_steps(steps, accum):
@@ -479,6 +474,7 @@ class Trainer:
                 num_training_steps=total_steps,
             )
         elif lr_schedule != "none" and warmup_steps > 0:
+
             def warmup_lambda(current_step):
                 return min(1.0, current_step / warmup_steps)
 
@@ -624,10 +620,7 @@ class Trainer:
 
                         if num_cycles > 1:
                             difference = strength_max - strength_min
-                            cycle_strength = (
-                                strength_min
-                                + difference * cycle / (num_cycles - 1)
-                            )
+                            cycle_strength = strength_min + difference * cycle / (num_cycles - 1)
                         else:
                             cycle_strength = strength_max
 
@@ -709,9 +702,7 @@ class Trainer:
                                     else " with current target-model gradients"
                                 ),
                             )
-                            nightmare_data = nightmare_generator.generate(
-                                nightmare_base_dataset
-                            )
+                            nightmare_data = nightmare_generator.generate(nightmare_base_dataset)
                             nightmare_dataloader = _tokenize_dataset(
                                 nightmare_data,
                                 self.tokenizer,
@@ -789,6 +780,7 @@ class Trainer:
                 if phase == "wake":
                     wake_runner = WakePhase(
                         model=phase_model,
+                        model_type=self.model_type,
                         optimizer=self.optimizer,
                         config=self.training_config,
                         device=self.device,
@@ -813,6 +805,7 @@ class Trainer:
                         reference_model=self.reference_model,
                         kl_weight=0.1,
                         scaler=self.scaler,
+                        model_type=self.model_type,
                         callback_manager=self.callback_manager,
                         lr_scheduler=self.lr_scheduler,
                     )
@@ -827,6 +820,7 @@ class Trainer:
                         device=self.device,
                         lr_multiplier=lr_multiplier,
                         scaler=self.scaler,
+                        model_type=self.model_type,
                         callback_manager=self.callback_manager,
                         lr_scheduler=self.lr_scheduler,
                     )
@@ -838,6 +832,7 @@ class Trainer:
                         config=self.compression_config,
                         device=self.device,
                         scaler=self.scaler,
+                        model_type=self.model_type,
                         callback_manager=self.callback_manager,
                         lr_scheduler=self.lr_scheduler,
                     )
