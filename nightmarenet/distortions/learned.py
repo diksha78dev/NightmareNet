@@ -79,7 +79,7 @@ class LearnedAdversarialGenerator:
         self._model: Any = None
         self._tokenizer: Any = None
         self._available: Optional[bool] = None
-        self._cache: OrderedDict[tuple[int, str, float, str], str] = OrderedDict()
+        self._cache: OrderedDict[tuple[Any, ...], str] = OrderedDict()
 
         if self.strategy == "attention" or self.target_model is None:
             self._ensure_fallback_model()
@@ -110,9 +110,7 @@ class LearnedAdversarialGenerator:
     def get_cached_examples(self, cycle_id: Optional[int] = None) -> list[str]:
         """Return cached generated examples, optionally restricted to one cycle."""
         return [
-            value
-            for (cached_cycle, _, _, _), value in self._cache.items()
-            if cycle_id is None or cached_cycle == cycle_id
+            value for key, value in self._cache.items() if cycle_id is None or key[0] == cycle_id
         ]
 
     def clear_cache(self) -> None:
@@ -482,7 +480,7 @@ class LearnedAdversarialGenerator:
         return " ".join(words)
 
     def _cache_key(self, text: str, strength: float, strategy: str) -> tuple:
-        model_id = id(self._target_model) if self._target_model else 0
+        model_id = id(self.target_model) if self.target_model else 0
         return (self.cycle_id, model_id, text, round(float(strength), 8), strategy)
 
     def _cache_result(self, key: tuple, value: str) -> None:
