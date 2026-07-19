@@ -37,7 +37,7 @@ from nightmarenet.utils.telemetry import get_tracer
 logger = logging.getLogger(__name__)
 
 try:
-    from fastapi import Body, FastAPI, HTTPException, Request, UploadFile
+    from fastapi import Body, FastAPI, HTTPException, Query, Request, UploadFile
     from fastapi.middleware.cors import CORSMiddleware
     from slowapi import Limiter
     from slowapi.errors import RateLimitExceeded
@@ -60,6 +60,7 @@ try:
         PipelineCreateRequest,
         PipelineEvaluateRequest,
         PipelineReportResponse,
+        PipelineRunsListResponse,
         PipelineStatusResponse,
         # Adding the missing schemas for validation
         PipelineTrainRequest,
@@ -1093,16 +1094,34 @@ async def get_pipeline_report(run_id: str):
 
 @app.get(
     "/api/v1/pipeline/runs",
-    response_model=list[PipelineStatusResponse],
-    summary="List all pipeline runs (active and historical)",
+    response_model=PipelineRunsListResponse,
+    summary="List all pipeline runs with pagination",
     tags=["pipeline"],
 )
-async def list_pipeline_runs():
-    """List all pipeline runs, including completed historical runs from disk."""
+@limiter.limit("30/minute")
+async def list_runs(
+    request: Request,
+    offset: int = Query(0, ge=0, description="Number of runs to skip"),
+    limit: int = Query(50, ge=1, le=200, description="Maximum number of runs to return"),
+):
+    """List all pipeline runs with pagination support.
+
+    Returns a paginated list of pipeline runs (including completed/historical
+    runs from disk) with metadata for client-side pagination UI.
+    Defaults to first 50 runs.
+    """
     from nightmarenet.pipeline_runner import list_all_runs
 
-    runs = list_all_runs(include_historical=True)
-    return [PipelineStatusResponse(**run) for run in runs]
+    all_runs = list_all_runs(include_historical=True)
+    total = len(all_runs)
+    page = all_runs[offset:offset + limit]
+
+    return PipelineRunsListResponse(
+        runs=[PipelineStatusResponse(**run) for run in page],
+        total=total,
+        offset=offset,
+        limit=limit,
+    )
 
 
 _TEST_WEBHOOK_BODY = Body(...)
