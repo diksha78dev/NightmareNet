@@ -3,7 +3,7 @@
 Verifies that the DRY refactor (importing distort() from dream.py/nightmare.py
 instead of inline logic) produces correct results.
 """
-
+import nightmarenet.distortions.nightmare as nightmare_module
 from nightmarenet.distortions.dream import distort as dream_distort
 from nightmarenet.distortions.nightmare import distort as nightmare_distort
 
@@ -58,3 +58,152 @@ class TestDistortionModuleExports:
     def test_empty_text_passes_through(self):
         assert dream_distort("", strength=0.5) == ""
         assert nightmare_distort("", strength=0.5) == ""
+
+
+class TestNightmarePipeline:
+    """Test nightmare pipeline orchestration."""
+
+    def test_pipeline_order(self, monkeypatch):
+        calls = []
+
+        def fake_text(text, strength, config):
+            calls.append("text")
+            return text + "_text"
+
+        def fake_semantic(text, strength, config):
+            calls.append("semantic")
+            assert text.endswith("_text")
+            return text + "_semantic"
+
+        def fake_adversarial(text, strength, config):
+            calls.append("adversarial")
+            assert text.endswith("_semantic")
+            return text
+
+        monkeypatch.setattr(
+            nightmare_module,
+            "apply_text_distortions",
+            fake_text,
+        )
+        monkeypatch.setattr(
+            nightmare_module,
+            "apply_semantic_distortions",
+            fake_semantic,
+        )
+        monkeypatch.setattr(
+            nightmare_module,
+            "apply_adversarial_distortions",
+            fake_adversarial,
+        )
+
+        nightmare_module.distort("hello", strength=0.6)
+
+        assert calls == ["text", "semantic", "adversarial"]
+
+    def test_config_forwarding(self, monkeypatch):
+        received = {}
+
+        def fake_text(text, strength, config):
+            received["text"] = config
+            return text
+
+        def fake_semantic(text, strength, config):
+            received["semantic"] = config
+            return text
+
+        def fake_adversarial(text, strength, config):
+            received["adversarial"] = config
+            return text
+
+        monkeypatch.setattr(
+            nightmare_module,
+            "apply_text_distortions",
+            fake_text,
+        )
+        monkeypatch.setattr(
+            nightmare_module,
+            "apply_semantic_distortions",
+            fake_semantic,
+        )
+        monkeypatch.setattr(
+            nightmare_module,
+            "apply_adversarial_distortions",
+            fake_adversarial,
+        )
+
+        config = {
+            "text": {"char_swap": 1.0},
+            "semantic": {"synonym_replace": 0.5},
+            "adversarial": {"ambiguity": 0.7},
+        }
+
+        nightmare_module.distort(
+            "hello",
+            strength=0.5,
+            config=config,
+        )
+
+        assert received["text"] == config["text"]
+        assert received["semantic"] == config["semantic"]
+        assert received["adversarial"] == config["adversarial"]
+
+    def test_default_adversarial_config_created(self, monkeypatch):
+        received = {}
+
+        monkeypatch.setattr(
+            nightmare_module,
+            "apply_text_distortions",
+            lambda text, strength, config: text,
+        )
+        monkeypatch.setattr(
+            nightmare_module,
+            "apply_semantic_distortions",
+            lambda text, strength, config: text,
+        )
+
+        def fake_adv(text, strength, config):
+            received["config"] = config
+            return text
+
+        monkeypatch.setattr(
+            nightmare_module,
+            "apply_adversarial_distortions",
+            fake_adv,
+        )
+
+        nightmare_module.distort("hello", strength=0.8)
+
+        assert received["config"] is not None
+        assert "contradiction" in received["config"]
+        assert "ambiguity" in received["config"]
+        assert "cross_domain" in received["config"]
+        assert "misleading_context" in received["config"]
+        assert "learned" in received["config"]
+
+    def test_no_default_adversarial_config_below_threshold(self, monkeypatch):
+        received = {}
+
+        monkeypatch.setattr(
+            nightmare_module,
+            "apply_text_distortions",
+            lambda text, strength, config: text,
+        )
+        monkeypatch.setattr(
+            nightmare_module,
+            "apply_semantic_distortions",
+            lambda text, strength, config: text,
+        )
+
+        def fake_adv(text, strength, config):
+            received["config"] = config
+            return text
+
+        monkeypatch.setattr(
+            nightmare_module,
+            "apply_adversarial_distortions",
+            fake_adv,
+        )
+
+        nightmare_module.distort("hello", strength=0.4)
+
+        assert received["config"] is None
