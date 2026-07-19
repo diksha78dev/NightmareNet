@@ -6,10 +6,7 @@ import React from "react";
 // Mock framer-motion to avoid animation complexity in tests
 vi.mock("framer-motion", () => {
     const createMotionMock = (tag: string) =>
-        React.forwardRef(function MockMotionComponent(
-            props: Record<string, unknown>,
-            ref: React.Ref<HTMLElement>
-        ) {
+        function MockMotionComponent(props: Record<string, unknown>) {
             const {
                 children,
                 whileHover,
@@ -20,12 +17,13 @@ vi.mock("framer-motion", () => {
                 transition,
                 variants,
                 layout,
+                ref,
                 ...domProps
             } = props;
             void whileHover; void whileTap; void initial; void animate;
             void exit; void transition; void variants; void layout;
             return React.createElement(tag, { ...domProps, ref }, children as React.ReactNode);
-        });
+        };
 
     return {
         motion: new Proxy({}, { get: (_t, prop: string) => createMotionMock(prop) }),
@@ -47,14 +45,18 @@ vi.mock("@/lib/sounds", () => ({
     }),
 }));
 
+// Use vi.hoisted so these are defined before vi.mock is hoisted above them
+const { pushMock, testWebhookMock } = vi.hoisted(() => ({
+    pushMock: vi.fn(),
+    testWebhookMock: vi.fn(),
+}));
+
 // Mock useToast hook
-const pushMock = vi.fn();
 vi.mock("@/components/ui/Toast", () => ({
     useToast: () => ({ push: pushMock }),
 }));
 
 // Mock the webhook API call — we don't want real network requests in tests
-const testWebhookMock = vi.fn();
 vi.mock("@/lib/api", () => ({
     testWebhook: (...args: unknown[]) => testWebhookMock(...args),
 }));
@@ -98,7 +100,7 @@ describe("SettingsPanel component", () => {
     });
 
     it("shows a success toast when the webhook test succeeds", async () => {
-        testWebhookMock.mockResolvedValueOnce({ ok: true });
+        testWebhookMock.mockResolvedValueOnce({ status: "success" });
         render(<SettingsPanel />);
         fireEvent.click(screen.getByText("Notifications"));
         fireEvent.click(screen.getByText("Test Connection"));

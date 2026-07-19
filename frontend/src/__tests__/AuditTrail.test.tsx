@@ -5,18 +5,15 @@ import React from "react";
 
 vi.mock("framer-motion", () => {
     const createMotionMock = (tag: string) =>
-        React.forwardRef(function MockMotionComponent(
-            props: Record<string, unknown>,
-            ref: React.Ref<HTMLElement>
-        ) {
+        function MockMotionComponent(props: Record<string, unknown>) {
             const {
                 children, whileHover, whileTap, initial, animate, exit,
-                transition, variants, layout, ...domProps
+                transition, variants, layout, ref, ...domProps
             } = props;
             void whileHover; void whileTap; void initial; void animate;
             void exit; void transition; void variants; void layout;
             return React.createElement(tag, { ...domProps, ref }, children as React.ReactNode);
-        });
+        };
 
     return {
         motion: new Proxy({}, { get: (_t, prop: string) => createMotionMock(prop) }),
