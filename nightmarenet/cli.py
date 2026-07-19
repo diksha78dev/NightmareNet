@@ -571,6 +571,18 @@ def build_parser() -> argparse.ArgumentParser:
         version=f"%(prog)s {__version__}",
         help="Show the installed nightmarenet version and exit",
     )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Enable verbose output (DEBUG level logging)",
+    )
+    parser.add_argument(
+        "-q",
+        "--quiet",
+        action="store_true",
+        help="Suppress informational output (only ERROR level logging)",
+    )
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
     # train
@@ -697,6 +709,21 @@ def main(argv: Optional[list] = None) -> int:
     if not args.command:
         parser.print_help()
         return 0
+
+    # Set up logging based on verbosity flags
+    if getattr(args, "verbose", False) and getattr(args, "quiet", False):
+        print("Error: --verbose and --quiet are mutually exclusive", file=sys.stderr)
+        return 1
+
+    log_level = "INFO"
+    if getattr(args, "verbose", False):
+        log_level = "DEBUG"
+    elif getattr(args, "quiet", False):
+        log_level = "ERROR"
+
+    from nightmarenet.utils.logging_config import setup_logging
+
+    setup_logging(log_level=log_level, console=True, file_logging=False)
 
     commands = {
         "train": cmd_train,
