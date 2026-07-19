@@ -19,6 +19,11 @@ from typing import Any, Callable, Optional
 from nightmarenet.exceptions import PipelinePhaseError
 from nightmarenet.pipeline import Pipeline
 
+try:
+    from opentelemetry import context as otel_context
+except ImportError:
+    otel_context = None
+
 logger = logging.getLogger(__name__)
 
 
@@ -70,8 +75,15 @@ class PipelineRunner:
 
         # Persist initial run state
         _persist_run_state(self.id, self.pipeline.config, "running", self._start_time)
+        parent_context = (
+            otel_context.get_current() if otel_context is not None else None
+        )
 
         def _run() -> None:
+            token = None
+
+            if otel_context is not None and parent_context is not None:
+                token = otel_context.attach(parent_context)
             try:
                 self._last_heartbeat = time.time()
                 _update_run_state(self.id, "ingesting", self._last_heartbeat)
@@ -94,15 +106,43 @@ class PipelineRunner:
                 self._last_heartbeat = time.time()
                 _update_run_state(self.id, "evaluating", self._last_heartbeat)
                 self.pipeline.evaluate()
-                _update_run_state(self.id, "complete", time.time(), self.pipeline.metrics.to_dict())
+                _update_run_state(
+                    self.id,
+                    "complete",
+                    time.time(),
+                    self.pipeline.metrics.to_dict(),
+                )
+
             except PipelinePhaseError as e:
-                logger.error("Pipeline run %s failed in phase '%s': %s", self.id, e.phase, e)
-                _update_run_state(self.id, "failed", time.time(), self.pipeline.metrics.to_dict())
+                logger.error(
+                    "Pipeline run %s failed in phase '%s': %s",
+                    self.id,
+                    e.phase,
+                    e,
+                )
+                _update_run_state(
+                    self.id,
+                    "failed",
+                    time.time(),
+                    self.pipeline.metrics.to_dict(),
+                )
+
             except Exception:
                 logger.exception("Pipeline run %s failed unexpectedly", self.id)
-                _update_run_state(self.id, "failed", time.time(), self.pipeline.metrics.to_dict())
+                _update_run_state(
+                    self.id,
+                    "failed",
+                    time.time(),
+                    self.pipeline.metrics.to_dict(),
+                )
 
-        self._thread = threading.Thread(target=_run, daemon=True, name=f"pipeline-{self.id}")
+            finally:
+                if token is not None:
+                    otel_context.detach(token)
+
+        self._thread = threading.Thread(
+            target=_run, daemon=True, name=f"pipeline-{self.id}"
+        )
         self._thread.start()
         logger.info("Pipeline %s started.", self.id)
         return self.id
@@ -243,7 +283,9 @@ def _get_runs_dir() -> Path:
     return runs_dir
 
 
-def _persist_run_state(run_id: str, config: dict, status: str, timestamp: float) -> None:
+def _persist_run_state(
+    run_id: str, config: dict, status: str, timestamp: float
+) -> None:
     """Persist initial run state to disk."""
     runs_dir = _get_runs_dir()
     run_file = runs_dir / f"{run_id}.json"
@@ -320,7 +362,13 @@ def load_persisted_runs() -> None:
                 continue
 
             # Detect stale running runs
-            active_statuses = {"running", "ingesting", "preparing", "training", "evaluating"}
+            active_statuses = {
+                "running",
+                "ingesting",
+                "preparing",
+                "training",
+                "evaluating",
+            }
             if status in active_statuses and (now - last_heartbeat > stale_threshold):
                 state["status"] = "interrupted"
                 _atomic_write_json(run_file, state)

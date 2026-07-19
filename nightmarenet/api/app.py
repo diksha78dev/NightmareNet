@@ -26,6 +26,13 @@ except ImportError:
     pass
 
 from nightmarenet import __version__
+from nightmarenet.distortions.dream import (
+    distort as _apply_dream_distortions,
+)  # noqa: E402
+from nightmarenet.distortions.nightmare import (
+    distort as _apply_nightmare_distortions,
+)  # noqa: E402
+from nightmarenet.utils.telemetry import get_tracer
 
 logger = logging.getLogger(__name__)
 
@@ -121,6 +128,26 @@ async def _startup_logging():
         logger.info("Logging initialized from config: %s", config_path)
 
 
+@app.middleware("http")
+async def telemetry_middleware(request: Request, call_next):
+    """Create an OpenTelemetry span for every incoming HTTP request."""
+
+    tracer = get_tracer()
+
+    with tracer.start_as_current_span(f"{request.method} {request.url.path}") as span:
+        span.set_attribute("http.method", request.method)
+        span.set_attribute("http.target", request.url.path)
+
+        try:
+            response = await call_next(request)
+            span.set_attribute("http.status_code", response.status_code)
+            return response
+
+        except Exception as exc:
+            span.record_exception(exc)
+            raise
+
+
 # --- Rate limiting ---
 limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
@@ -174,10 +201,6 @@ register_suggest_routes(app, limiter)
 from nightmarenet.api.data_optimize import register_data_optimize_routes  # noqa: E402
 
 register_data_optimize_routes(app, limiter)
-
-
-from nightmarenet.distortions.dream import distort as _apply_dream_distortions  # noqa: E402
-from nightmarenet.distortions.nightmare import distort as _apply_nightmare_distortions  # noqa: E402
 
 
 def _char_similarity(a: str, b: str) -> float:
@@ -373,16 +396,18 @@ async def evaluate_robustness(
             }
             scores["nightmare"][str(strength)] = {
                 "similarity": round(_char_similarity(body.text, nightmare_result), 4),
-                "length_ratio": round(len(nightmare_result) / max(len(body.text), 1), 4),
+                "length_ratio": round(
+                    len(nightmare_result) / max(len(body.text), 1), 4
+                ),
             }
 
         # Summary
         avg_dream_sim = sum(v["similarity"] for v in scores["dream"].values()) / max(
             len(scores["dream"]), 1
         )
-        avg_nightmare_sim = sum(v["similarity"] for v in scores["nightmare"].values()) / max(
-            len(scores["nightmare"]), 1
-        )
+        avg_nightmare_sim = sum(
+            v["similarity"] for v in scores["nightmare"].values()
+        ) / max(len(scores["nightmare"]), 1)
 
         summary = (
             f"Dream avg similarity: {avg_dream_sim:.2%}, "
@@ -632,11 +657,17 @@ async def compare_distortions(
         seed = body.seed
 
         # Baseline distortions
-        dream_base = _apply_dream_distortions(body.text, body.baseline_strength, seed=seed)
-        nightmare_base = _apply_nightmare_distortions(body.text, body.baseline_strength, seed=seed)
+        dream_base = _apply_dream_distortions(
+            body.text, body.baseline_strength, seed=seed
+        )
+        nightmare_base = _apply_nightmare_distortions(
+            body.text, body.baseline_strength, seed=seed
+        )
 
         # Challenge distortions
-        dream_challenge = _apply_dream_distortions(body.text, body.challenge_strength, seed=seed)
+        dream_challenge = _apply_dream_distortions(
+            body.text, body.challenge_strength, seed=seed
+        )
         nightmare_challenge = _apply_nightmare_distortions(
             body.text, body.challenge_strength, seed=seed
         )
@@ -659,10 +690,13 @@ async def compare_distortions(
 
         # Resilience = how much similarity drops between baseline and challenge
         dream_drop = max(
-            dream_details["baseline"].similarity - dream_details["challenge"].similarity, 0.0
+            dream_details["baseline"].similarity
+            - dream_details["challenge"].similarity,
+            0.0,
         )
         nightmare_drop = max(
-            nightmare_details["baseline"].similarity - nightmare_details["challenge"].similarity,
+            nightmare_details["baseline"].similarity
+            - nightmare_details["challenge"].similarity,
             0.0,
         )
         avg_drop = (dream_drop + nightmare_drop) / 2
@@ -948,21 +982,30 @@ async def create_pipeline(
         "tracking": {"backend": "none"},
         "seed": 42,
         "notifications": {
-            "webhooks": [{"url": wh.url, "events": wh.events} for wh in body.webhooks]
-            if body.webhooks
-            else [],
+            "webhooks": (
+                [{"url": wh.url, "events": wh.events} for wh in body.webhooks]
+                if body.webhooks
+                else []
+            ),
         },
     }
 
-    pipeline = Pipeline(config=config)
-    runner = PipelineRunner(pipeline)
-    try:
-        register_runner(runner)
-    except RuntimeError as e:
-        raise HTTPException(
-            status_code=503,
-            detail=str(e) or "Pipeline runner registry is at capacity",
-        ) from e
+    tracer = get_tracer()
+
+    with tracer.start_as_current_span("pipeline.create"):
+        pipeline = Pipeline(config=config)
+        runner = PipelineRunner(pipeline)
+
+        span = tracer.get_current_span()
+
+        span.set_attribute("pipeline.source_type", body.source_type)
+        try:
+            register_runner(runner)
+        except RuntimeError as e:
+            raise HTTPException(
+                status_code=503,
+                detail=str(e) or "Pipeline runner registry is at capacity",
+            ) from e
 
     # Build ingest kwargs
     ingest_kwargs: dict[str, Any] = {}
@@ -982,7 +1025,11 @@ async def create_pipeline(
     else:
         raise HTTPException(400, f"Unknown source_type: {body.source_type}")
 
-    runner.start(**ingest_kwargs)
+    tracer = get_tracer()
+
+    with tracer.start_as_current_span("pipeline.run"):
+        runner.start(**ingest_kwargs)
+
     return PipelineStatusResponse(**runner.status())
 
 
