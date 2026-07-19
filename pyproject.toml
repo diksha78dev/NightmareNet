@@ -62,6 +62,7 @@ tracking = [
     "wandb>=0.16.0",
     "tensorboard>=2.14.0",
 ]
+mlflow = ["mlflow>=2.0"]
 distributed = [
     "accelerate>=0.25.0",
 ]
