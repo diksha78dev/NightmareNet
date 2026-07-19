@@ -26,6 +26,19 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+_GPU_SAMPLE_INTERVAL = 30  # seconds
+
+
+def _gpu_sample_loop(stop_event: threading.Event, interval: float = _GPU_SAMPLE_INTERVAL) -> None:
+    """Periodically record GPU utilization until stop_event is set."""
+    from nightmarenet.utils.telemetry import _sample_gpu_utilization, record_metric
+
+    while not stop_event.is_set():
+        util = _sample_gpu_utilization()
+        if util is not None:
+            record_metric("gpu_utilization", util)
+        stop_event.wait(interval)
+
 
 class PipelineRunner:
     """Runs a Pipeline in a daemon thread, streaming events via callback.
@@ -81,9 +94,19 @@ class PipelineRunner:
 
         def _run() -> None:
             token = None
+            stop_gpu = threading.Event()
 
             if otel_context is not None and parent_context is not None:
                 token = otel_context.attach(parent_context)
+
+            gpu_thread = threading.Thread(
+                target=_gpu_sample_loop,
+                args=(stop_gpu,),
+                daemon=True,
+                name=f"gpu-sampler-{self.id}",
+            )
+            gpu_thread.start()
+
             try:
                 self._last_heartbeat = time.time()
                 _update_run_state(self.id, "ingesting", self._last_heartbeat)
@@ -137,6 +160,8 @@ class PipelineRunner:
                 )
 
             finally:
+                stop_gpu.set()
+                gpu_thread.join(timeout=2)
                 if token is not None:
                     otel_context.detach(token)
 
