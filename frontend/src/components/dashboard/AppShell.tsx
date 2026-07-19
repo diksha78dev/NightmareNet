@@ -39,7 +39,9 @@ export function AppShell({
   useEffect(() => {
     if (externalPaletteOpenPulse === undefined) return;
     if (externalPaletteOpenPulse === 0) return; // ignore initial mount
-    setPaletteOpen((s) => !s);
+    setTimeout(() => {
+      setPaletteOpen((s) => !s);
+    }, 0);
   }, [externalPaletteOpenPulse]);
 
   return (

@@ -233,13 +233,15 @@ export function AskNightmareDock({ section, onNavigate }: AskNightmareDockProps)
 
   // Reset streamed state when section changes so context is always fresh.
   useEffect(() => {
-    setAsk({
-      status: "idle",
-      text: "",
-      suggestions: null,
-      model: null,
-      error: null,
-    });
+    setTimeout(() => {
+      setAsk({
+        status: "idle",
+        text: "",
+        suggestions: null,
+        model: null,
+        error: null,
+      });
+    }, 0);
   }, [section]);
 
   const handleAsk = useCallback(async () => {

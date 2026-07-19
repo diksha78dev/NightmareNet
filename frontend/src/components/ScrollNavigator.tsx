@@ -75,7 +75,7 @@ export default function ScrollNavigator() {
 
   const currentIndex = SECTIONS.findIndex((s) => s.id === activeSection);
 
-  const scrollToSection = (id: string, index: number) => {
+  const scrollToSection = (id: string, _index: number) => {
     const el = document.getElementById(id);
     if (!el) return;
 

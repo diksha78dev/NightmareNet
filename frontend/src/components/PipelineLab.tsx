@@ -8,13 +8,11 @@ import {
   FileText,
   Brain,
   Rocket,
-  Loader2,
   CheckCircle2,
   XCircle,
   ChevronRight,
   Workflow,
   BarChart3,
-  Download,
   AlertTriangle,
   Sparkles,
   Moon,
@@ -93,7 +91,7 @@ export default function PipelineLab() {
   const [dreamEpochs, setDreamEpochs] = useState(1);
   const [nightmareEpochs, setNightmareEpochs] = useState(1);
   const [batchSize, setBatchSize] = useState(8);
-  const [learningRate, setLearningRate] = useState(5e-5);
+  const [learningRate] = useState(5e-5);
   const [maxSamples, setMaxSamples] = useState(200);
   const [dreamStrength, setDreamStrength] = useState(0.25);
   const [nightmareStrength, setNightmareStrength] = useState(0.8);
@@ -119,6 +117,30 @@ export default function PipelineLab() {
   }, []);
 
   /* ── WebSocket live progress (with polling fallback) ── */
+  const startPollingFallback = useCallback((id: string) => {
+    if (pollRef.current) clearInterval(pollRef.current);
+    pollRef.current = setInterval(async () => {
+      try {
+        const s = await getPipelineStatus(id);
+        setPipelineStatus(s);
+        if (!s.is_running) {
+          if (pollRef.current) clearInterval(pollRef.current);
+          if (s.status === "complete" && s.has_report) {
+            try {
+              const r = await getPipelineReport(id);
+              setReport(r);
+            } catch { /* report not ready yet */ }
+            setStep("complete");
+          } else if (s.status === "failed") {
+            setError(s.error || "Pipeline failed.");
+          }
+        }
+      } catch {
+        /* network hiccup — keep polling */
+      }
+    }, 3000);
+  }, []);
+
   const startPolling = useCallback((id: string) => {
     if (pollRef.current) clearInterval(pollRef.current);
     if (wsRef.current) { wsRef.current.close(); wsRef.current = null; }
@@ -161,31 +183,7 @@ export default function PipelineLab() {
     } catch {
       startPollingFallback(id);
     }
-  }, []);
-
-  const startPollingFallback = useCallback((id: string) => {
-    if (pollRef.current) clearInterval(pollRef.current);
-    pollRef.current = setInterval(async () => {
-      try {
-        const s = await getPipelineStatus(id);
-        setPipelineStatus(s);
-        if (!s.is_running) {
-          if (pollRef.current) clearInterval(pollRef.current);
-          if (s.status === "complete" && s.has_report) {
-            try {
-              const r = await getPipelineReport(id);
-              setReport(r);
-            } catch { /* report not ready yet */ }
-            setStep("complete");
-          } else if (s.status === "failed") {
-            setError(s.error || "Pipeline failed.");
-          }
-        }
-      } catch {
-        /* network hiccup — keep polling */
-      }
-    }, 3000);
-  }, []);
+  }, [startPollingFallback]);
 
   /* ── Launch pipeline ── */
   const handleLaunch = async () => {
@@ -215,7 +213,7 @@ export default function PipelineLab() {
           const parsed = JSON.parse(saved);
           if (Array.isArray(parsed)) {
             req.webhooks = parsed
-              .map((wh: any) => ({
+              .map((wh: { url?: string; events?: string[] }) => ({
                 url: wh.url || "",
                 events: wh.events || [],
               }))

@@ -28,7 +28,9 @@ export function useDemoMode(): { isLive: boolean; isLoading: boolean } {
   }, []);
 
   useEffect(() => {
-    check();
+    setTimeout(() => {
+      check();
+    }, 0);
     const onFocus = () => {
       if (Date.now() - lastCheck.current > 30_000) check();
     };

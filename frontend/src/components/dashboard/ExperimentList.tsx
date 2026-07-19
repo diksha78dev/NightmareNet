@@ -281,10 +281,15 @@ export function ExperimentList({
 
   useEffect(() => {
     const trimmed = query.trim();
-    setSemanticIds(null);
+    setTimeout(() => {
+      setSemanticIds(null);
+      if (trimmed.length < 3) {
+        setSemanticPending(false);
+        setSemanticError(false);
+      }
+    }, 0);
+
     if (trimmed.length < 3) {
-      setSemanticPending(false);
-      setSemanticError(false);
       return;
     }
 

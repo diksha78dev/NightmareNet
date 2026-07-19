@@ -105,10 +105,12 @@ function ResilienceChart({ data }: { data: RobustnessResponse }) {
   return <canvas ref={canvasRef} className="w-full" style={{ height: 240 }} />;
 }
 
+const DEFAULT_STRENGTHS = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];
+
 /* ── Main Component ── */
 export default function ResilienceLab() {
   const [tab, setTab] = useState<Tab>("compare");
-  const [text, setText] = useState(
+  const [text] = useState(
     "Attention mechanisms enable transformers to capture long-range dependencies."
   );
 
@@ -124,7 +126,6 @@ export default function ResilienceLab() {
 
   const [error, setError] = useState<string | null>(null);
 
-  const DEFAULT_STRENGTHS = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];
 
   const handleCompare = useCallback(async () => {
     setCompareLoading(true);

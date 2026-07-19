@@ -69,7 +69,9 @@ export function DistortionPreview() {
       return;
     }
     if (handoff && handoff.trim()) {
-      setText(handoff);
+      setTimeout(() => {
+        setText(handoff);
+      }, 0);
       toast.push({
         title: "Continuing from marketing demo",
         description: "We carried your text into the live distortion preview.",

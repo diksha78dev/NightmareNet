@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   IconCommand,
@@ -74,9 +74,18 @@ export function CommandPalette({
     [onNavigate, onAction]
   );
 
-  const [recentIds, setRecentIds] = useState<string[]>([]);
+  const runItem = useCallback((it: PaletteItem) => {
+    pushRecentPaletteId(it.id);
+    it.onRun();
+    onClose();
+  }, [onClose]);
+
   useEffect(() => {
-    if (open) setRecentIds(loadRecentPaletteIds());
+    if (open) {
+      setTimeout(() => {
+        setRecentIds(loadRecentPaletteIds());
+      }, 0);
+    }
   }, [open]);
 
   const filtered = useMemo(
@@ -86,8 +95,10 @@ export function CommandPalette({
 
   useEffect(() => {
     if (open) {
-      setQuery("");
-      setActiveIdx(0);
+      setTimeout(() => {
+        setQuery("");
+        setActiveIdx(0);
+      }, 0);
       const t = setTimeout(() => inputRef.current?.focus(), 50);
       return () => clearTimeout(t);
     }
@@ -113,10 +124,12 @@ export function CommandPalette({
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
-  }, [open, filtered, activeIdx, onClose]);
+  }, [open, filtered, activeIdx, onClose, runItem]);
 
   useEffect(() => {
-    setActiveIdx(0);
+    setTimeout(() => {
+      setActiveIdx(0);
+    }, 0);
   }, [query]);
 
   const grouped = useMemo(() => {
@@ -125,8 +138,8 @@ export function CommandPalette({
     if (!query.trim() && recentIds.length > 0) {
       const idToItem = new Map(items.map((it) => [it.id, it] as const));
       const recents = recentIds
-        .map((id) => idToItem.get(id))
-        .filter((x): x is PaletteItem => Boolean(x));
+          .map((id) => idToItem.get(id))
+          .filter((x): x is PaletteItem => Boolean(x));
       if (recents.length > 0) map.set("Recent", recents);
     }
     for (const it of filtered) {
@@ -136,12 +149,6 @@ export function CommandPalette({
     }
     return Array.from(map.entries());
   }, [filtered, items, recentIds, query]);
-
-  const runItem = (it: PaletteItem) => {
-    pushRecentPaletteId(it.id);
-    it.onRun();
-    onClose();
-  };
 
   return (
     <AnimatePresence>

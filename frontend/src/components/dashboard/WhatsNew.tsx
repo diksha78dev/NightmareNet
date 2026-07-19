@@ -54,7 +54,9 @@ export function WhatsNew() {
       return;
     }
     const current = getCurrentBuild();
-    setBuild(current);
+    setTimeout(() => {
+      setBuild(current);
+    }, 0);
     const seen = window.localStorage.getItem(STORAGE_KEY);
     if (seen !== current) {
       // Defer a beat so the dashboard finishes its entrance animation

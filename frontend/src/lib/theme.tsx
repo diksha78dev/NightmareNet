@@ -36,11 +36,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-    const stored = localStorage.getItem(STORAGE_KEY) as Theme | null;
-    if (stored && ["dark", "light", "system"].includes(stored)) {
-      setThemeState(stored);
-    }
+    setTimeout(() => {
+      setMounted(true);
+      const stored = localStorage.getItem(STORAGE_KEY) as Theme | null;
+      if (stored && ["dark", "light", "system"].includes(stored)) {
+        setThemeState(stored);
+      }
+    }, 0);
     const root = document.documentElement;
     if (!root.classList.contains("dark") && !root.classList.contains("light")) {
       root.classList.add("dark");
@@ -51,7 +53,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     if (!mounted) return;
 
     const resolved = theme === "system" ? getSystemTheme() : theme;
-    setResolvedTheme(resolved);
+    setTimeout(() => {
+      setResolvedTheme(resolved);
+    }, 0);
 
     const root = document.documentElement;
     root.classList.remove("dark", "light");

@@ -169,7 +169,9 @@ export function useSounds(): UseSoundsReturn {
   const reducedMotion = useRef(false);
 
   useEffect(() => {
-    setEnabled(getStoredEnabled());
+    setTimeout(() => {
+      setEnabled(getStoredEnabled());
+    }, 0);
     reducedMotion.current = prefersReducedMotion();
     initOnInteraction();
 

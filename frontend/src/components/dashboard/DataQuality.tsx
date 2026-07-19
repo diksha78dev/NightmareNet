@@ -13,7 +13,6 @@ import {
   suggestConfig,
   type DataOptimizeResponse,
   type DataStats,
-  type OptimizeStreamEvent,
   type SuggestConfigResponse,
 } from "@/lib/api";
 
@@ -200,7 +199,9 @@ export function DataQuality() {
 
   useEffect(() => {
     if (qualityHistory.length === 0 && texts.length > 0) {
-      setQualityHistory([{ score: qualityScore, timestamp: Date.now() }]);
+      setTimeout(() => {
+        setQualityHistory([{ score: qualityScore, timestamp: Date.now() }]);
+      }, 0);
     }
   }, [qualityScore, qualityHistory.length, texts.length]);
 
