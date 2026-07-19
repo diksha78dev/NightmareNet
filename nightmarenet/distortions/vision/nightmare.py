@@ -52,7 +52,10 @@ class FGSM(ImageDistortion):
 
     name = "vision_fgsm"
     phase = "nightmare"
-    description = "Fast Gradient Sign Method single-step adversarial attack"
+    description = (
+        "Fast Gradient Sign Method single-step adversarial attack. "
+        "Falls back to pixel perturbation when no model is injected."
+    )
 
     def __init__(
         self,
@@ -107,7 +110,10 @@ class PGD(ImageDistortion):
 
     name = "vision_pgd"
     phase = "nightmare"
-    description = "Projected Gradient Descent multi-step adversarial attack"
+    description = (
+        "Projected Gradient Descent multi-step adversarial attack. "
+        "Falls back to pixel perturbation when no model is injected."
+    )
 
     def __init__(
         self,
