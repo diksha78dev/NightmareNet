@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 jobs:
-    test:
+  test:
     name: Tests & Lint (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
 
@@ -80,6 +80,16 @@ jobs:
         if: matrix.python-version == '3.12'
         working-directory: frontend
         run: npm run build
+
+      - name: Lint frontend
+        if: matrix.python-version == '3.12'
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Type-check frontend
+        if: matrix.python-version == '3.12'
+        working-directory: frontend
+        run: npx tsc --noEmit
 
       - name: Install Playwright Chromium
         if: matrix.python-version == '3.12'
@@ -186,4 +196,3 @@ jobs:
 
       - name: Smoke-test image
         run: echo "Build verified (image not loaded to save disk space)"
-        

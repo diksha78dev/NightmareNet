@@ -111,6 +111,23 @@ app = FastAPI(
 )
 
 
+@app.on_event("startup")
+async def _startup_logging():
+    """Initialize logging from default config on API startup."""
+    from pathlib import Path
+
+    import yaml
+
+    from nightmarenet.utils.logging_config import setup_logging_from_config
+
+    config_path = Path(__file__).resolve().parents[2] / "configs" / "default.yaml"
+    if config_path.exists():
+        with open(config_path) as f:
+            config = yaml.safe_load(f) or {}
+        setup_logging_from_config(config)
+        logger.info("Logging initialized from config: %s", config_path)
+
+
 @app.middleware("http")
 async def telemetry_middleware(request: Request, call_next):
     """Create an OpenTelemetry span for every incoming HTTP request."""

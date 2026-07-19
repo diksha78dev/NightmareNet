@@ -288,7 +288,7 @@ class Trainer:
         else:
             self.tracker = create_tracker_from_config({})
 
-        self.run_id = None
+        self.run_id: Optional[str] = None
         self._vram_alert_sent = False
         self.callback_manager = callback_manager or CallbackManager()
 
