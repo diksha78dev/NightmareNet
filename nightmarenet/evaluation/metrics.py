@@ -348,7 +348,7 @@ def robustness_score(
     inv_ppls = [1.0 / max(p, 1e-8) for p in perplexities]
     _trapz_fn = getattr(np, "trapezoid", None)
     if _trapz_fn is None:
-        _trapz_fn = getattr(np, "trapz")
+        _trapz_fn = np.trapz  # type: ignore[attr-defined]
     auc = float(_trapz_fn(inv_ppls, strengths))
 
     return {
