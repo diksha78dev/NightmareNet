@@ -484,6 +484,8 @@ class DistortedVisionDataset(torch.utils.data.Dataset):
         self.dataset = dataset
         self.generator = generator
         self.phase = phase
+        self._cached_strengths = None
+        self._cached_strengths_len = None
 
     def __len__(self):
         return len(self.dataset)
@@ -514,9 +516,12 @@ class DistortedVisionDataset(torch.utils.data.Dataset):
         actual_strength = self.generator.strength
         sched = getattr(self.generator, "strength_schedule", "uniform")
         if self.phase == "nightmare" and sched != "uniform":
-            strengths = self.generator._compute_strengths(len(self.dataset))
-            if idx < len(strengths):
-                actual_strength = strengths[idx]
+            ds_len = len(self.dataset)
+            if self._cached_strengths is None or self._cached_strengths_len != ds_len:
+                self._cached_strengths = self.generator._compute_strengths(ds_len)
+                self._cached_strengths_len = ds_len
+            if idx < len(self._cached_strengths):
+                actual_strength = self._cached_strengths[idx]
 
         distorted = pixel_values
         for name in engines:

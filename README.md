@@ -107,6 +107,15 @@ nightmarenet train --config configs/benchmark_cifar10.yaml
 ```
 
 ### Sleep Phases for Vision
+
+```mermaid
+flowchart LR
+    subgraph Training Cycle
+        Wake --> Dream --> Nightmare --> Compress
+    end
+    Compress --> Evaluation
+```
+
 When `model.type: "image_classification"` is specified, text-specific configurations like `max_length` and `text_column` are automatically bypassed, and the training phases adapt to image tensors:
 * **Wake Phase**: Supervised cross-entropy training on clean image tensors.
 * **Dream Phase**: Stochastic application of mild, non-adversarial image distortions (Color Jitter, Geometric Transform, Gaussian Blur, and JPEG Compression) to boost invariance.

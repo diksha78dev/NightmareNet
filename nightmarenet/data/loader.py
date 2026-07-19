@@ -304,10 +304,10 @@ def load_from_config(config: dict) -> Any:
 
         if max_samples is not None:
             train_dataset = torch.utils.data.Subset(
-                train_dataset, list(range(min(max_samples, len(train_dataset))))
+                train_dataset, range(min(max_samples, len(train_dataset)))
             )
             test_limit = min(max_samples // 5 or 1, len(test_dataset))
-            test_dataset = torch.utils.data.Subset(test_dataset, list(range(test_limit)))
+            test_dataset = torch.utils.data.Subset(test_dataset, range(test_limit))
 
         return VisionDatasetWrapper(train_dataset, test_dataset)
 
@@ -326,6 +326,8 @@ def load_from_config(config: dict) -> Any:
 class VisionItemWrapper(torch.utils.data.Dataset):
     def __init__(self, dataset):
         self.dataset = dataset
+        from torchvision.transforms.functional import to_tensor
+        self._to_tensor = to_tensor
 
     def __len__(self):
         return len(self.dataset)
@@ -333,8 +335,7 @@ class VisionItemWrapper(torch.utils.data.Dataset):
     def __getitem__(self, idx):
         img, label = self.dataset[idx]
         if not isinstance(img, torch.Tensor):
-            from torchvision.transforms.functional import to_tensor
-            img = to_tensor(img)
+            img = self._to_tensor(img)
         return {"pixel_values": img, "labels": label}
 
 
