@@ -29,7 +29,10 @@ def cmd_train(args: argparse.Namespace) -> int:
     import yaml
 
     with open(config_path) as f:
-        config = yaml.safe_load(f)
+        config = yaml.safe_load(f) or {}
+
+    from nightmarenet.utils.logging_config import setup_logging_from_config
+    setup_logging_from_config(config)
 
     if getattr(args, "resume", None):
         if "training" not in config:
@@ -205,7 +208,10 @@ def cmd_benchmark(args: argparse.Namespace) -> int:
 
     if config_path.exists():
         with open(config_path) as f:
-            config = yaml.safe_load(f)
+            config = yaml.safe_load(f) or {}
+
+        from nightmarenet.utils.logging_config import setup_logging_from_config
+        setup_logging_from_config(config)
     else:
         config = {}
 
