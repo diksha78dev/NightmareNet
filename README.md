@@ -29,6 +29,7 @@
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
 [![CI](https://github.com/Adit-Jain-srm/NightmareNet/actions/workflows/ci.yml/badge.svg)](https://github.com/Adit-Jain-srm/NightmareNet/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/Adit-Jain-srm/NightmareNet/branch/main/graph/badge.svg)](https://codecov.io/gh/Adit-Jain-srm/NightmareNet)
 [![Tests](https://img.shields.io/badge/tests-660%2B%20passing-brightgreen)](#testing)
 [![Python](https://img.shields.io/badge/python-3.9%E2%80%933.12-blue)](#installation)
 
@@ -106,6 +107,34 @@ Learn how to use, extend, and deploy NightmareNet through our step-by-step tutor
 *   [Tutorial 3: Interpreting Results & Compliance](docs/tutorials/interpreting-results.md) — Understand robustness curves (AUC), generalization metrics, and generate signed EU AI Act compliance reports.
 *   [Tutorial 4: Vision Pipeline](docs/tutorials/vision-pipeline.md) — Load images, apply vision distortions (color jitter, noise, FGSM/PGD attacks), and evaluate vision models.
 *   [Tutorial 5: Deployment](docs/tutorials/deployment.md) — Configure, run, and scale production-grade docker containers, configure keys, and integrate alerts.
+
+---
+
+## Computer Vision Support
+
+NightmareNet supports cyclic adversarial robustness training for image classification models (such as ResNet-18) on torchvision datasets (such as CIFAR-10).
+
+To run the computer vision sleep-cycle pipeline:
+```bash
+nightmarenet train --config configs/benchmark_cifar10.yaml
+```
+
+### Sleep Phases for Vision
+
+```mermaid
+flowchart LR
+    subgraph Training Cycle
+        Wake --> Dream --> Nightmare --> Compress
+    end
+    Compress --> Evaluation
+```
+
+When `model.type: "image_classification"` is specified, text-specific configurations like `max_length` and `text_column` are automatically bypassed, and the training phases adapt to image tensors:
+* **Wake Phase**: Supervised cross-entropy training on clean image tensors.
+* **Dream Phase**: Stochastic application of mild, non-adversarial image distortions (Color Jitter, Geometric Transform, Gaussian Blur, and JPEG Compression) to boost invariance.
+* **Nightmare Phase**: Adversarial training with custom target model gradient projection (FGSM and PGD pixel perturbations).
+* **Compress Phase**: Magnitude weight pruning and RSLAD-style robust distillation directly on perturbed input images.
+* **Evaluation**: Calculates clean classification accuracy and Area Under Curve (AUC) accuracy across increasing distortion strengths.
 
 ---
 
