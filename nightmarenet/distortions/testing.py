@@ -30,11 +30,10 @@ def validate_distortion_plugin(engine_cls: type) -> List[str]:
 
         failures = validate_distortion_plugin(MyDistortion)
         if failures:
-            print("Validation failed:")
             for f in failures:
-                print(f"  - {f}")
+                logger.warning("Validation failed: %s", f)
         else:
-            print("Plugin is valid!")
+            logger.info("Plugin is valid!")
     """
     return validate_base_distortion(engine_cls)
 
@@ -57,6 +56,6 @@ def validate_distortion_function(fn) -> List[str]:
 
         failures = validate_distortion_function(my_distortion)
         if not failures:
-            print("Function is valid!")
+            logger.info("Function is valid!")
     """
     return validate_distortion_contract(fn)

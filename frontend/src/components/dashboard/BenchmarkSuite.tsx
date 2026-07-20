@@ -93,7 +93,7 @@ export function BenchmarkSuite() {
           icon={<IconBenchmark size={18} />}
           title="No benchmarks available"
           description="Your benchmark suite is empty. Create or configure benchmarks to begin testing."
-          primary={{ label: "Configure Benchmarks", onClick: () => console.log("[BenchmarkSuite] empty-state primary") }}
+          primary={{ label: "Configure Benchmarks", onClick: () => {} }}
         />
       ) : (
         <ul className="space-y-2">
