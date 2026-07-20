@@ -27,7 +27,7 @@ To start the full stack:
 docker compose up
 ```
 
-To run only the backend services (API + Worker + DB + Redis - note that worker, db, and redis are gated behind the `hosted` profile):
+To run backend services with the hosted profile (enables Worker + DB + Redis alongside API):
 ```bash
-docker compose --profile hosted up api worker
+docker compose --profile hosted up
 ```

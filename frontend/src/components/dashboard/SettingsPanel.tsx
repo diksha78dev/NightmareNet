@@ -65,9 +65,7 @@ export function SettingsPanel() {
       .then((res) => {
         setWebhooks(res.webhooks.map((w, i) => ({ ...w, id: `wh-${i}-${Date.now()}` })));
       })
-      .catch((err) => {
-        console.error("Failed to load webhooks", err);
-      });
+      .catch(() => {});
   }, []);
 
   return (
@@ -98,6 +96,7 @@ export function SettingsPanel() {
         <button
           type="button"
           role="switch"
+          aria-label="Toggle UI sounds"
           aria-checked={sounds.enabled}
           onClick={sounds.toggle}
           className={[
@@ -366,6 +365,7 @@ export function SettingsPanel() {
                           >
                             <input
                               type="checkbox"
+                              aria-label={`${ev.label} webhook event`}
                               checked={active}
                               onChange={() => {
                                 const newEvents = active
