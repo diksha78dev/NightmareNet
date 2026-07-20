@@ -25,6 +25,8 @@ def validate_distortion_plugin(engine_cls: type) -> List[str]:
         List of validation failure messages (empty if valid)
 
     Example:
+        import logging
+        logger = logging.getLogger(__name__)
         from nightmarenet.distortions.testing import validate_distortion_plugin
         from my_plugin import MyDistortion
 
@@ -49,6 +51,8 @@ def validate_distortion_function(fn) -> List[str]:
         List of validation failure messages (empty if valid)
 
     Example:
+        import logging
+        logger = logging.getLogger(__name__)
         from nightmarenet.distortions.testing import validate_distortion_function
 
         def my_distortion(text: str, strength: float, seed: int = None) -> str:
