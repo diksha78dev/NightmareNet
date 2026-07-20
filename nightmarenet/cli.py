@@ -853,8 +853,6 @@ def build_parser() -> argparse.ArgumentParser:
     transfer_parser.add_argument("--transferred", help="Path to transferred evaluation JSON")
     transfer_parser.add_argument("--baseline", help="Path to baseline evaluation JSON")
 
-<<<<<<< HEAD
-=======
     # optimize command parsing mapping
     optimize_parser = subparsers.add_parser(
         "optimize", help="Run hyperparameter optimization via Optuna"
@@ -866,7 +864,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Override the number of optimization trials.",
     )
 
->>>>>>> a1e265d (fix: address CodeRabbit review feedback)
     # push command parsing mapping
     push_parser = subparsers.add_parser(
         "push", help="Upload a hardened model directory to HuggingFace Hub"
