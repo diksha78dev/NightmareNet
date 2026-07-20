@@ -26,6 +26,7 @@ import {
   getPipelineStatus,
   cancelPipeline,
   getPipelineReport,
+  getApiBase,
   type PipelineCreateRequest,
   type PipelineStatusResponse,
   type PipelineReportResponse,
@@ -123,8 +124,21 @@ export default function PipelineLab() {
     if (pollRef.current) clearInterval(pollRef.current);
     if (wsRef.current) { wsRef.current.close(); wsRef.current = null; }
 
-    const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = `${wsProtocol}//${window.location.host}/ws/runs/${id}`;
+    const apiBase = getApiBase();
+    let wsUrl = "";
+    if (apiBase) {
+      try {
+        const u = new URL(apiBase);
+        const wsProtocol = u.protocol === "https:" ? "wss:" : "ws:";
+        wsUrl = `${wsProtocol}//${u.host}/ws/runs/${id}`;
+      } catch (e) {
+        const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+        wsUrl = `${wsProtocol}//${window.location.host}/ws/runs/${id}`;
+      }
+    } else {
+      const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      wsUrl = `${wsProtocol}//${window.location.host}/ws/runs/${id}`;
+    }
 
     try {
       const ws = new WebSocket(wsUrl);

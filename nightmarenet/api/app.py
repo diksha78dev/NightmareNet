@@ -72,6 +72,8 @@ try:
         TrainingConfigResponse,
         TrainingPhasePreview,
         UploadResponse,
+        WebhookSettingsRequest,
+        WebhookSettingsResponse,
         WebhookTestResponse,
     )
 except ImportError as e:
@@ -226,6 +228,10 @@ def _char_similarity(a: str, b: str) -> float:
 _test_count_cache: dict[str, Any] = {"count": None, "checked_at": 0.0}
 _TEST_CACHE_TTL = 300  # refresh every 5 minutes
 
+
+WEBHOOKS_FILE_PATH = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data", "webhooks.json"
+)
 
 def _get_test_count() -> Optional[int]:
     """Return the number of collected tests, cached (optionally, dev-only)."""
@@ -942,7 +948,7 @@ async def create_pipeline(
     )
 
     # Build config from request
-    config = {
+    config: dict[str, Any] = {
         "model": {
             "name": body.model_name,
             "type": body.model_type,
@@ -988,6 +994,14 @@ async def create_pipeline(
             ),
         },
     }
+
+    if os.path.exists(WEBHOOKS_FILE_PATH):
+        try:
+            with open(WEBHOOKS_FILE_PATH, encoding="utf-8") as f:
+                data = json.load(f)
+                config["notifications"]["webhooks"].extend(data.get("webhooks", []))
+        except Exception as e:
+            logger.error("Failed to read webhooks in create_pipeline: %s", e)
 
     tracer = get_tracer()
 
@@ -1088,6 +1102,48 @@ async def get_pipeline_report(run_id: str):
         report_md=metrics.report_md,
         comparison=metrics.comparison,
     )
+
+
+@app.get(
+    "/api/v1/settings/webhooks",
+    response_model=WebhookSettingsResponse,
+    summary="Get webhook settings",
+    tags=["settings"],
+)
+async def get_webhook_settings():
+    """Retrieve the current webhook settings."""
+    if not os.path.exists(WEBHOOKS_FILE_PATH):
+        return WebhookSettingsResponse(webhooks=[])
+    try:
+        with open(WEBHOOKS_FILE_PATH, encoding="utf-8") as f:
+            data = json.load(f)
+            return WebhookSettingsResponse(webhooks=data.get("webhooks", []))
+    except Exception as e:
+        logger.error("Failed to read webhooks: %s", e)
+        return WebhookSettingsResponse(webhooks=[])
+
+
+@app.post(
+    "/api/v1/settings/webhooks",
+    response_model=WebhookSettingsResponse,
+    summary="Save webhook settings",
+    tags=["settings"],
+)
+async def save_webhook_settings(
+    request: Request,
+    body: WebhookSettingsRequest,
+):
+    """Save webhook settings."""
+    try:
+        os.makedirs(os.path.dirname(WEBHOOKS_FILE_PATH), exist_ok=True)
+        with open(WEBHOOKS_FILE_PATH, "w", encoding="utf-8") as f:
+            json.dump({"webhooks": [w.model_dump() for w in body.webhooks]}, f, indent=2)
+        return WebhookSettingsResponse(webhooks=body.webhooks)
+    except Exception as e:
+        logger.error("Failed to save webhooks: %s", e)
+        raise HTTPException(
+            status_code=500, detail="Failed to save webhook settings."
+        ) from None
 
 
 @app.get(
