@@ -231,6 +231,7 @@ Measured on RTX 3050 Ti (4 GB VRAM), DistilBERT-base-uncased, 500 train / 200 ev
 
 
 ### Measured Benchmarks (v1)
+
 | Model | Method | Clean Acc | TextFooler Acc | BertAttack Acc | Robustness Score | Params |
 |-------|--------|-----------|----------------|----------------|------------------|--------|
 | DistilBERT | Standard FT (baseline) | 90.5% | 23.1% | 17.6% | 0.412 | 66.0M |
@@ -413,6 +414,26 @@ nightmarenet evaluate \
     --strengths 0.1,0.3,0.5,0.7,0.9
 ```
 
+#### TextAttack adversarial evaluation
+
+Run standard adversarial attacks (TextFooler, BERTAttack, TextBugger, PWWS) via [TextAttack](https://github.com/QData/TextAttack):
+
+```bash
+# Install the attacks extra
+pip install 'nightmarenet[attacks]'
+
+# Run TextFooler + BERTAttack evaluation
+nightmarenet evaluate \
+    --model distilbert-base-uncased-finetuned-sst-2-english \
+    --attacks textfooler,bertattack \
+    --num-examples 200 \
+    --device cuda \
+    --dataset sst2
+
+# JSON output for CI
+nightmarenet evaluate --model ./output --attacks textfooler --json
+```
+
 ### `nightmarenet benchmark`
 
 Run a standard benchmark suite (SST-2, AG News, IMDB) with reproducible seeds.
@@ -455,6 +476,7 @@ model_dir = pull_model(
     local_dir="./models/hardened-robust-model"
 )
 print(f"Model successfully loaded at: {model_dir}")
+```
 
 ---
 
