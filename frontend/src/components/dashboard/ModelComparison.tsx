@@ -129,7 +129,7 @@ export function ModelComparison() {
           icon={<IconTrend size={18} />}
           title="Insufficient models"
           description="Model comparison requires at least two models. Add another model to compare performance."
-          primary={{ label: "Add Model", onClick: () => console.log("[ModelComparison] empty-state primary") }}
+          primary={{ label: "Add Model", onClick: () => {} }}
         />
       ) : (
         <>

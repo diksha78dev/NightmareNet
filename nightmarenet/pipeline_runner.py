@@ -22,7 +22,7 @@ from nightmarenet.pipeline import Pipeline
 try:
     from opentelemetry import context as otel_context
 except ImportError:
-    otel_context = None
+    otel_context = None  # type: ignore[assignment]
 
 logger = logging.getLogger(__name__)
 

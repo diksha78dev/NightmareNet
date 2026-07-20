@@ -571,6 +571,19 @@ def build_parser() -> argparse.ArgumentParser:
         version=f"%(prog)s {__version__}",
         help="Show the installed nightmarenet version and exit",
     )
+    verbosity_group = parser.add_mutually_exclusive_group()
+    verbosity_group.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Enable verbose output (DEBUG level logging)",
+    )
+    verbosity_group.add_argument(
+        "-q",
+        "--quiet",
+        action="store_true",
+        help="Suppress informational output (only ERROR level logging)",
+    )
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
     # train
@@ -697,6 +710,19 @@ def main(argv: Optional[list] = None) -> int:
     if not args.command:
         parser.print_help()
         return 0
+
+    # Set up logging based on verbosity flags
+    # Disable console logging for evaluate --json to avoid contaminating JSON output
+    json_mode = args.command == "evaluate" and getattr(args, "json", False)
+    log_level = "INFO"
+    if getattr(args, "verbose", False):
+        log_level = "DEBUG"
+    elif getattr(args, "quiet", False):
+        log_level = "ERROR"
+
+    from nightmarenet.utils.logging_config import setup_logging
+
+    setup_logging(log_level=log_level, console=not json_mode, file_logging=False)
 
     commands = {
         "train": cmd_train,

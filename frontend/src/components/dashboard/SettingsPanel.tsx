@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Panel } from "./Panel";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -9,7 +9,7 @@ import { Select } from "@/components/ui/Select";
 import { useToast } from "@/components/ui/Toast";
 import { useSounds } from "@/lib/sounds";
 import { IconKey, IconSettings, IconShield, IconWand, IconBell } from "./icons";
-import { testWebhook } from "@/lib/api";
+import { testWebhook, getWebhooks, saveWebhooks } from "@/lib/api";
 
 type Tab = "keys" | "model" | "distortion" | "integrations" | "notifications";
 
@@ -58,25 +58,15 @@ export function SettingsPanel() {
   const toast = useToast();
   const sounds = useSounds();
 
-  const [webhooks, setWebhooks] = useState<WebhookConfig[]>(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("nightmarenet-webhooks");
-      if (saved) {
-        try {
-          return JSON.parse(saved);
-        } catch {
-          // fallback
-        }
-      }
-    }
-    return [
-      {
-        id: "wh-1",
-        url: "https://hooks.slack.com/services/YOUR_WORKSPACE/YOUR_CHANNEL/YOUR_TOKEN",
-        events: ["run_complete", "regression_detected", "alert"],
-      },
-    ];
-  });
+  const [webhooks, setWebhooks] = useState<WebhookConfig[]>([]);
+
+  useEffect(() => {
+    getWebhooks()
+      .then((res) => {
+        setWebhooks(res.webhooks.map((w, i) => ({ ...w, id: `wh-${i}-${Date.now()}` })));
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <Panel
@@ -437,13 +427,23 @@ export function SettingsPanel() {
               <Button
                 variant="primary"
                 size="sm"
-                onClick={() => {
-                  localStorage.setItem("nightmarenet-webhooks", JSON.stringify(webhooks));
-                  toast.push({
-                    title: "Webhooks Saved",
-                    description: "Webhook configuration saved successfully.",
-                    variant: "success",
-                  });
+                onClick={async () => {
+                  try {
+                    await saveWebhooks({
+                      webhooks: webhooks.map(w => ({ url: w.url, events: w.events }))
+                    });
+                    toast.push({
+                      title: "Webhooks Saved",
+                      description: "Webhook configuration saved successfully.",
+                      variant: "success",
+                    });
+                  } catch (err: unknown) {
+                    toast.push({
+                      title: "Failed to save",
+                      description: "Could not save webhooks.",
+                      variant: "warning",
+                    });
+                  }
                 }}
               >
                 Save webhooks

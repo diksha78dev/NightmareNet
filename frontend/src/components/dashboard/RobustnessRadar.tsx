@@ -63,7 +63,7 @@ export function RobustnessRadar() {
           icon={<IconRadar size={18} />}
           title="No evaluation data"
           description="There are currently no robustness metrics to display. Run an evaluation to generate radar data."
-          primary={{ label: "Run Evaluation", onClick: () => console.log("[RobustnessRadar] empty-state primary") }}
+          primary={{ label: "Run Evaluation", onClick: () => {} }}
         />
       ) : (
         <>

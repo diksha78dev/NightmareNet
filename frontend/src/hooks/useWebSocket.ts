@@ -36,6 +36,13 @@ export function useWebSocket({
   const blockedUrlRef = useRef<string | null>(null);
   const hasConnectedRef = useRef(false);
   const previousUrlRef = useRef<string | null>(null);
+  const onMessageRef = useRef(onMessage);
+  const onReconnectRef = useRef(onReconnect);
+
+  useEffect(() => {
+    onMessageRef.current = onMessage;
+    onReconnectRef.current = onReconnect;
+  }, [onMessage, onReconnect]);
 
   const disconnect = useCallback(() => {
     blockedUrlRef.current = url;
@@ -102,12 +109,12 @@ export function useWebSocket({
         retryCount = 0;
         setAttempt(0);
         setStatus("connected");
-        if (reconnected) onReconnect?.();
+        if (reconnected) onReconnectRef.current?.();
       };
 
       ws.onmessage = (event) => {
         try {
-          onMessage?.(JSON.parse(event.data));
+          onMessageRef.current?.(JSON.parse(event.data));
         } catch {
           /* ignore bad payloads */
         }
@@ -135,7 +142,7 @@ export function useWebSocket({
         wsRef.current = null;
       }
     };
-  }, [url, enabled, connectionKey, onMessage, onReconnect]);
+  }, [url, enabled, connectionKey]);
 
   return { status, attempt, reconnect, disconnect };
 }

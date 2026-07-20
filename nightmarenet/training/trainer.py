@@ -404,6 +404,11 @@ class Trainer:
         torch.save(state, os.path.join(path, "training_state.pt"))
         logger.info("Checkpoint saved: %s (including training state)", path)
 
+        try:
+            self.tracker.log_artifact(path)
+        except Exception as e:
+            logger.warning("Failed to log checkpoint artifact to tracker: %s", e)
+
         # Post-save validation and complete file hashes update
         meta_path = os.path.join(path, "metadata.json")
         try:
