@@ -65,6 +65,7 @@ coverage/
 
 # Python tooling output
 .pytest_cache/
+.hypothesis/
 .ruff_cache/
 .mypy_cache/
 .coverage
