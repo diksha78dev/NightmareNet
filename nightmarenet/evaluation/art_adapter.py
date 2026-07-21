@@ -14,7 +14,7 @@ from __future__ import annotations
 import logging
 import time
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
@@ -139,7 +139,7 @@ class NightmareNetARTClassifier:
         nb_classes: int,
         input_shape: Tuple[int, ...],
         **kwargs: Any,
-    ) -> "NightmareNetARTClassifier":
+    ) -> NightmareNetARTClassifier:
         """Factory constructor for convenience."""
         return cls(model=model, nb_classes=nb_classes, input_shape=input_shape, **kwargs)
 
@@ -205,7 +205,8 @@ def run_art_attack(
     """Run a single ART attack against a wrapped model.
 
     Args:
-        classifier: An ART-compatible classifier (e.g. from ``NightmareNetARTClassifier.classifier``).
+        classifier: An ART-compatible classifier (e.g. from
+            ``NightmareNetARTClassifier.classifier``).
         attack_name: One of ``"pgd"``, ``"fgsm"``, ``"cw"``.
         x: Clean input samples as a numpy array of shape ``(N, *input_shape)``.
         y: True labels as a numpy array of shape ``(N,)`` or one-hot ``(N, C)``.
