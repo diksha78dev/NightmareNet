@@ -14,9 +14,9 @@ import threading
 import time
 import uuid
 from pathlib import Path
+from typing import TYPE_CHECKING, Any, Callable, Optional
 
 from nightmarenet.exceptions import PipelinePhaseError
-from typing import TYPE_CHECKING, Any, Callable, Optional
 
 if TYPE_CHECKING:
     from nightmarenet.pipeline import Pipeline
