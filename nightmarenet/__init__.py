@@ -10,11 +10,11 @@ except ImportError:
 try:
     from nightmarenet.evaluation.evaluator import Evaluator as Evaluator
 except ImportError:
-    Evaluator = None  # type: ignore[assignment]
+    Evaluator = None  # type: ignore[assignment, misc]
 
 try:
     from nightmarenet.pipeline import Pipeline as Pipeline
 except ImportError:
-    Pipeline = None  # type: ignore[assignment]
+    Pipeline = None  # type: ignore[assignment, misc]
 
 __all__ = ["Pipeline", "Evaluator", "get_registry", "__version__"]
