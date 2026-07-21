@@ -18,10 +18,10 @@ import pytest
 fastapi = pytest.importorskip("fastapi")
 httpx = pytest.importorskip("httpx")
 
-from fastapi.testclient import TestClient  # noqa: E402
+from fastapi.testclient import TestClient  # noqa: E402, I001
 
-from nightmarenet.api.app import app  # noqa: E402
-import nightmarenet.pipeline_runner as pr  # noqa: E402
+from nightmarenet.api.app import app  # noqa: E402, I001
+import nightmarenet.pipeline_runner as pr  # noqa: E402, I001
 
 client = TestClient(app)
 
