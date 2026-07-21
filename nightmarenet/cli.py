@@ -444,9 +444,9 @@ def cmd_distort(args: argparse.Namespace) -> int:
 
         result = registry.apply(args.engine, text, strength=strength, seed=args.seed)
         engine_meta = registry.get_engine_metadata(args.engine)
-        logger.info(f"Original:  {text}")
-        logger.info(f"Distorted: {result}")
-        logger.info(
+        print(f"Original:  {text}")
+        print(f"Distorted: {result}")
+        print(
             f"  Engine: {args.engine}, Phase: {engine_meta.get('phase', 'unknown')}, "
             f"Strength: {strength}"
         )
@@ -462,9 +462,9 @@ def cmd_distort(args: argparse.Namespace) -> int:
             logger.error(f"Unknown distortion type: {args.type}")
             return 1
 
-        logger.info(f"Original:  {text}")
-        logger.info(f"Distorted: {result}")
-        logger.info(f"  Type: {args.type}, Strength: {strength}")
+        print(f"Original:  {text}")
+        print(f"Distorted: {result}")
+        print(f"  Type: {args.type}, Strength: {strength}")
 
     return 0
 
