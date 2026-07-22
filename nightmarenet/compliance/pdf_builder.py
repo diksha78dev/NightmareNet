@@ -82,6 +82,9 @@ def _create_cover_page(
     story.append(Spacer(1, 0.5 * inch))
 
     model_info = [
+        ["Model Name", report["model"].get("name") or "N/A"],
+        ["Model Type", report["model"].get("type") or "N/A"],
+        ["Dataset", report["dataset"].get("name") or "N/A"],
         ["Model Name", report["model"].get("name", "N/A")],
         ["Model Type", report["model"].get("type", "N/A")],
         ["Dataset", report["dataset"].get("name", "N/A")],
@@ -148,6 +151,10 @@ def _create_robustness_section(
     robustness = report["robustness"]
 
     content = [
+        ["Clean Accuracy", str(robustness.get("clean_accuracy", "N/A"))],
+        ["Distorted Accuracy", str(robustness.get("distorted_accuracy", "N/A"))],
+        ["AUC Robustness", str(robustness.get("auc_robustness", "N/A"))],
+        ["Delta", str(robustness.get("delta", "N/A"))],
         [
             ["Clean Accuracy", str(robustness.get("clean_accuracy", "N/A"))],
             ["Distorted Accuracy", str(robustness.get("distorted_accuracy", "N/A"))],
@@ -168,6 +175,8 @@ def _create_artifact_integrity_section(
     integrity = report["artifact_integrity"]
 
     content = [
+        ["Config SHA-256", integrity.get("config_sha256", "N/A")],
+        ["Model SHA-256", integrity.get("model_sha256", "N/A")],
         [
             ["Config SHA-256", integrity.get("config_sha256", "N/A")],
             ["Model SHA-256", integrity.get("model_sha256", "N/A")],
@@ -186,6 +195,10 @@ def _create_environment_section(
     env = report["environment"]
 
     content = [
+        ["Python Version", env.get("python_version", "N/A")],
+        ["Platform", env.get("platform", "N/A")],
+        ["PyTorch Version", env.get("pytorch_version", "N/A")],
+        ["GPU", env.get("gpu", "N/A")],
         [
             ["Python Version", env.get("python_version", "N/A")],
             ["Platform", env.get("platform", "N/A")],
@@ -277,6 +290,10 @@ def _create_appendix(
     story.append(Paragraph("Full Report Data (JSON format):", styles["Normal"]))
     story.append(Spacer(1, 0.1 * inch))
 
+    import json
+
+    json_str = json.dumps(report, indent=2, default=str)
+    story.append(Paragraph(f"<pre>{json_str}</pre>", styles["Code"]))
     import html
     import json
 
@@ -469,6 +486,10 @@ def generate_pdf(
 
     # Content sections
     _create_robustness_section(report, story, styles)
+    _create_artifact_integrity_section(report, story, styles)
+    _create_environment_section(report, story, styles)
+    _create_eu_ai_act_section(report, story, styles)
+    _create_nist_section(report, story, styles)
     story.append(PageBreak())
     _create_artifact_integrity_section(report, story, styles)
     story.append(PageBreak())
