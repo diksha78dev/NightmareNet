@@ -26,7 +26,7 @@ def cmd_train(args: argparse.Namespace) -> int:
 
     config_path = Path(args.config)
     if not config_path.exists():
-        logger.error(f"Config file not found: {config_path}")
+        logger.error("Config file not found: %s", config_path)
         return 1
 
     import yaml
@@ -35,7 +35,7 @@ def cmd_train(args: argparse.Namespace) -> int:
         config = yaml.safe_load(f) or {}
 
     if not isinstance(config, dict):
-        logger.error(f"Config file is not a valid YAML mapping: {config_path}")
+        logger.error("Config file is not a valid YAML mapping: %s", config_path)
         return 1
 
     try:
@@ -43,7 +43,7 @@ def cmd_train(args: argparse.Namespace) -> int:
 
         setup_logging_from_config(config)
     except Exception as exc:
-        logger.warning(f"Logging initialization failed: {exc}")
+        logger.warning("Logging initialization failed: %s", exc)
 
     if getattr(args, "resume", None):
         if "training" not in config:
@@ -52,15 +52,15 @@ def cmd_train(args: argparse.Namespace) -> int:
 
     def on_event(event: dict) -> None:
         phase = event.get("status", "unknown")
-        logger.info(f"[{phase}] {event.get('message', '')}")
+        logger.info("[%s] %s", phase, event.get('message', ''))
 
     logger.info("NightmareNet Training Pipeline")
-    logger.info(f"  Config: {config_path}")
-    logger.info(f"  Model: {config.get('model', {}).get('name', 'gpt2')}")
+    logger.info("  Config: %s", config_path)
+    logger.info("  Model: %s", config.get('model', {}).get('name', 'gpt2'))
     if getattr(args, "distributed", None):
-        logger.info(f"  Distributed: {args.distributed}")
+        logger.info("  Distributed: %s", args.distributed)
     if getattr(args, "resume", None):
-        logger.info(f"  Resume from: {args.resume}")
+        logger.info("  Resume from: %s", args.resume)
     logger.info("")
 
     pipeline = Pipeline(
@@ -78,13 +78,13 @@ def cmd_train(args: argparse.Namespace) -> int:
 
     metrics = pipeline.metrics
     logger.info("Training complete!")
-    logger.info(f"  Final loss: {metrics.phase_loss:.4f}")
-    logger.info(f"  Status: {metrics.status}")
+    logger.info("  Final loss: %.4f", metrics.phase_loss)
+    logger.info("  Status: %s", metrics.status)
 
     if args.output:
         output_dir = Path(args.output)
         output_dir.mkdir(parents=True, exist_ok=True)
-        logger.info(f"  Output: {output_dir}")
+        logger.info("  Output: %s", output_dir)
 
     return 0
 
@@ -122,7 +122,7 @@ def cmd_evaluate(args: argparse.Namespace) -> int:
         from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
         if not json_only:
-            logger.info(f"Loading model: {model_name}")
+            logger.info("Loading model: %s", model_name)
 
         tokenizer = AutoTokenizer.from_pretrained(model_name)
         model = AutoModelForSequenceClassification.from_pretrained(model_name)
@@ -158,9 +158,9 @@ def cmd_evaluate(args: argparse.Namespace) -> int:
 
     if not json_only:
         logger.info("NightmareNet Evaluation")
-        logger.info(f"  Model:     {model}")
-        logger.info(f"  Dataset:   {dataset}")
-        logger.info(f"  Strengths: {args.strengths}")
+        logger.info("  Model:     %s", model)
+        logger.info("  Dataset:   %s", dataset)
+        logger.info("  Strengths: %s", args.strengths)
         logger.info("")
 
     registry = get_registry()
@@ -225,8 +225,8 @@ def cmd_benchmark(args: argparse.Namespace) -> int:
         from nightmarenet.evaluation.pareto_analysis import get_pareto_frontier
 
         logger.info("NightmareNet Ensemble Benchmark Suite")
-        logger.info(f"  Config: {args.config}")
-        logger.info(f"  Output: {args.output if args.output else './results'}")
+        logger.info("  Config: %s", args.config)
+        logger.info("  Output: %s", args.output if args.output else './results')
         logger.info("")
 
         output_dir = args.output if args.output else "./results"
@@ -238,7 +238,7 @@ def cmd_benchmark(args: argparse.Namespace) -> int:
                 timeout_seconds=300, output_dir=output_dir, no_cache=no_cache
             )
         except (FileNotFoundError, OSError) as e:
-            logger.error(f"Could not load benchmark config: {e}")
+            logger.error("Could not load benchmark config: %s", e)
             return 1
 
         # Analyze pareto frontier
@@ -251,7 +251,7 @@ def cmd_benchmark(args: argparse.Namespace) -> int:
 
         # We want json, csv, latex
         format_all(results, formats=["json", "csv", "latex"], output_dir=output_dir)
-        logger.info(f"Results saved to {output_dir}")
+        logger.info("Results saved to %s", output_dir)
 
         return 0
     import yaml
@@ -262,8 +262,8 @@ def cmd_benchmark(args: argparse.Namespace) -> int:
     model_name = args.model
 
     logger.info("NightmareNet Benchmark Suite Verification")
-    logger.info(f"  Suite: {suite}")
-    logger.info(f"  Model: {model_name}")
+    logger.info("  Suite: %s", suite)
+    logger.info("  Model: %s", model_name)
     logger.info("")
 
     config_path = Path("configs/default.yaml")
@@ -280,7 +280,7 @@ def cmd_benchmark(args: argparse.Namespace) -> int:
 
                 setup_logging_from_config(config)
             except Exception as exc:
-                logger.warning(f"Logging initialization failed: {exc}")
+                logger.warning("Logging initialization failed: %s", exc)
     else:
         config = {}
 
@@ -289,7 +289,7 @@ def cmd_benchmark(args: argparse.Namespace) -> int:
     config["model"]["name"] = model_name
     config["suite"] = suite
 
-    logger.info(f"Loading tokenizer and weights for '{model_name}'...")
+    logger.info("Loading tokenizer and weights for '%s'...", model_name)
     try:
         import torch
         from transformers import AutoModelForSequenceClassification, AutoTokenizer
@@ -299,7 +299,7 @@ def cmd_benchmark(args: argparse.Namespace) -> int:
         model = AutoModelForSequenceClassification.from_pretrained(model_name)
         model.to(device)
     except Exception as e:
-        logger.error(f"Failed to load model frameworks or weights: {e}")
+        logger.error("Failed to load model frameworks or weights: %s", e)
         return 1
 
     logger.info("Initializing evaluation matrix...")
@@ -316,19 +316,22 @@ def cmd_benchmark(args: argparse.Namespace) -> int:
         logger.info("Benchmark run interrupted.")
         return 130
     except Exception as e:
-        logger.error(f"Error executing benchmark suite: {e}")
+        logger.error("Error executing benchmark suite: %s", e)
         return 1
 
     logger.info("--- Benchmark Execution Results ---")
     if hasattr(evaluator, "print_results_table"):
         evaluator.print_results_table(results)
     else:
-        logger.info(f"Model: {model_name} | Suite Profile: {suite} | Status: Evaluation Complete")
+        logger.info(
+            "Model: %s | Suite Profile: %s | Status: Evaluation Complete",
+            model_name, suite
+        )
     logger.info("-----------------------------------")
 
     robustness_delta = float(results.get("robustness_delta", 0.0))
     logger.info("Verification Summary:")
-    logger.info(f"  Achieved Robustness Delta: +{robustness_delta * 100:.2f}%")
+    logger.info("  Achieved Robustness Delta: +%.2f%%", robustness_delta * 100)
     logger.info("  Target Paper Specification: +14.00%")
 
     if robustness_delta >= 0.14:
@@ -353,21 +356,21 @@ def cmd_distort(args: argparse.Namespace) -> int:
         if not presets:
             logger.info("No presets found.")
             return 0
-        logger.info(f"Available presets ({len(presets)}):")
+        logger.info("Available presets (%d):", len(presets))
         for preset in presets:
-            logger.info(f"  - {preset['name']}: {preset['description']}")
-            logger.info(f"    Path: {preset['path']}")
-            logger.info(f"    Version: {preset['version']}, Steps: {preset['num_steps']}")
+            logger.info("  - %s: %s", preset['name'], preset['description'])
+            logger.info("    Path: %s", preset['path'])
+            logger.info("    Version: %s, Steps: %d", preset['version'], preset['num_steps'])
         return 0
 
     # Handle --validate
     if getattr(args, "validate", None):
         is_valid, message = validate_chain_config(args.validate)
         if is_valid:
-            logger.info(f"✓ {message}")
+            logger.info("✓ %s", message)
             return 0
         else:
-            logger.error(f"✗ {message}")
+            logger.error("✗ %s", message)
             return 1
 
     # Handle --preset
@@ -382,15 +385,15 @@ def cmd_distort(args: argparse.Namespace) -> int:
             executor = ChainExecutor()
             result = executor.execute(text, chain_config, overall_strength=strength, seed=seed)
 
-            logger.info(f"Original:  {text}")
-            logger.info(f"Distorted: {result}")
-            logger.info(f"  Preset: {preset_name}, Strength: {strength}")
+            logger.info("Original:  %s", text)
+            logger.info("Distorted: %s", result)
+            logger.info("  Preset: %s, Strength: %s", preset_name, strength)
             return 0
         except FileNotFoundError as e:
-            logger.error(f"{e}")
+            logger.error("%s", e)
             return 1
         except Exception as e:
-            logger.error(f"Error executing preset: {e}")
+            logger.error("Error executing preset: %s", e)
             return 1
     from nightmarenet.distortions.registry import get_registry
 
@@ -409,27 +412,30 @@ def cmd_distort(args: argparse.Namespace) -> int:
         if engines_by_source.get("builtin"):
             logger.info("Built-in:")
             for engine in engines_by_source["builtin"]:
-                pkg_info = f" [{engine.get('package', '')}]" if engine.get("package") else ""
+                pkg_info = " [%s]" % engine.get('package', '') if engine.get("package") else ""  # noqa: UP031
                 logger.info(
-                    f"  {engine['name']} ({engine.get('phase', 'unknown')}){pkg_info} "
-                    f"- {engine.get('description', '')}"
+                    "  %s (%s)%s - %s",
+                    engine['name'], engine.get('phase', 'unknown'), pkg_info,
+                    engine.get('description', '')
                 )
 
         if engines_by_source.get("plugin"):
             logger.info("Plugins:")
             for engine in engines_by_source["plugin"]:
-                pkg_info = f" [{engine.get('package', '')}]" if engine.get("package") else ""
+                pkg_info = " [%s]" % engine.get('package', '') if engine.get("package") else ""  # noqa: UP031
                 logger.info(
-                    f"  {engine['name']} ({engine.get('phase', 'unknown')}){pkg_info} "
-                    f"- {engine.get('description', '')}"
+                    "  %s (%s)%s - %s",
+                    engine['name'], engine.get('phase', 'unknown'), pkg_info,
+                    engine.get('description', '')
                 )
 
         if engines_by_source.get("custom"):
             logger.info("Custom:")
             for engine in engines_by_source["custom"]:
                 logger.info(
-                    f"  {engine['name']} ({engine.get('phase', 'unknown')}) "
-                    f"- {engine.get('description', '')}"
+                    "  %s (%s) - %s",
+                    engine['name'], engine.get('phase', 'unknown'),
+                    engine.get('description', '')
                 )
 
         return 0
@@ -438,8 +444,8 @@ def cmd_distort(args: argparse.Namespace) -> int:
     if args.engine:
         # Use registry-based engine
         if args.engine not in registry:
-            logger.error(f"Unknown engine '{args.engine}'")
-            logger.error(f"Available: {', '.join(registry.engine_names)}")
+            logger.error("Unknown engine '%s'", args.engine)
+            logger.error("Available: %s", ', '.join(registry.engine_names))
             return 1
 
         result = registry.apply(args.engine, text, strength=strength, seed=args.seed)
@@ -459,7 +465,7 @@ def cmd_distort(args: argparse.Namespace) -> int:
         elif args.type == "nightmare":
             result = nightmare.distort(text, strength=strength, seed=args.seed)
         else:
-            logger.error(f"Unknown distortion type: {args.type}")
+            logger.error("Unknown distortion type: %s", args.type)
             return 1
 
         print(f"Original:  {text}")
@@ -479,11 +485,11 @@ def cmd_foundation(args: argparse.Namespace) -> int:
     elif args.action == "list":
         registry = get_registry()
         models = registry.list_models()
-        logger.info(f"Registered foundation models ({len(models)}):")
+        logger.info("Registered foundation models (%d):", len(models))
         for m in models:
-            logger.info(f"  - {m}")
+            logger.info("  - %s", m)
     else:
-        logger.error(f"Unknown foundation action: {args.action}")
+        logger.error("Unknown foundation action: %s", args.action)
         return 1
     return 0
 
@@ -529,12 +535,13 @@ def cmd_transfer(args: argparse.Namespace) -> int:
             report = generate_transfer_report(t_rob, b_rob, t_acc, b_acc, 0.0, 0.0)
             logger.info(report)
         except Exception as e:
-            logger.error(f"Error measuring transfer efficiency: {e}")
+            logger.error("Error measuring transfer efficiency: %s", e)
             return 1
     elif args.foundation and args.config:
         logger.info(
-            f"Starting transfer fine-tuning using foundation '{args.foundation}' "
-            f"and config '{args.config}'"
+            "Starting transfer fine-tuning using foundation '%s' "
+            "and config '%s'",
+            args.foundation, args.config
         )
         try:
             config = load_config(args.config)
@@ -542,14 +549,14 @@ def cmd_transfer(args: argparse.Namespace) -> int:
 
             foundation_path = registry.cache_dir / args.foundation
             if not foundation_path.exists():
-                logger.error(f"Foundation model '{args.foundation}' not found.")
+                logger.error("Foundation model '%s' not found.", args.foundation)
                 return 1
 
             model = create_transfer_model(
                 str(foundation_path), task_type=config.task_type, num_labels=config.num_labels
             )
 
-            logger.info(f"Loading dataset: {config.dataset}")
+            logger.info("Loading dataset: %s", config.dataset)
             # Placeholder for actual data prep, ensuring the pipeline can be executed
             dummy_data = [
                 {
@@ -577,18 +584,18 @@ def cmd_transfer(args: argparse.Namespace) -> int:
             )
 
             logger.info("Transfer fine-tuning completed.")
-            logger.info(f"Metrics: {metrics}")
+            logger.info("Metrics: %s", metrics)
 
             out_dir = Path(config.output_dir)
             out_dir.mkdir(parents=True, exist_ok=True)
             model.save_pretrained(out_dir)
-            logger.info(f"Model saved to {out_dir}")
+            logger.info("Model saved to %s", out_dir)
 
         except Exception as e:
             import traceback
 
             traceback.print_exc()
-            logger.error(f"Error during transfer fine-tuning: {e}")
+            logger.error("Error during transfer fine-tuning: %s", e)
             return 1
     else:
         logger.error("Invalid arguments for transfer command.")
@@ -633,7 +640,7 @@ def cmd_push(args: argparse.Namespace) -> int:
         push_model(model_dir=args.model, repo_id=args.hub, metadata_path=args.metadata)
         return 0
     except Exception as e:
-        logger.error(f"Error during Hub push operational routing: {e}")
+        logger.error("Error during Hub push operational routing: %s", e)
         return 1
 
 
@@ -643,7 +650,7 @@ def cmd_pull(args: argparse.Namespace) -> int:
         pull_model(repo_id=args.repo, target_dir=args.output)
         return 0
     except Exception as e:
-        logger.error(f"Error during Hub pull operational routing: {e}")
+        logger.error("Error during Hub pull operational routing: %s", e)
         return 1
 
 
@@ -658,7 +665,7 @@ def cmd_export(args: argparse.Namespace) -> int:
     fmt = args.format
 
     if not os.path.exists(checkpoint_dir):
-        logger.error(f"Checkpoint directory does not exist: {checkpoint_dir}")
+        logger.error("Checkpoint directory does not exist: %s", checkpoint_dir)
         return 1
 
     try:
@@ -691,10 +698,10 @@ def cmd_export(args: argparse.Namespace) -> int:
 
             model = AutoModelForSequenceClassification.from_config(config)
     except Exception as e:
-        logger.error(f"Error initializing model structure: {e}")
+        logger.error("Error initializing model structure: %s", e)
         return 1
 
-    logger.info(f"Loading weights from {checkpoint_dir}...")
+    logger.info("Loading weights from %s...", checkpoint_dir)
     from nightmarenet.distributed.checkpoint import load_model_weights
 
     device = torch.device("cpu")
@@ -702,7 +709,7 @@ def cmd_export(args: argparse.Namespace) -> int:
     try:
         load_model_weights(model, checkpoint_dir, device)
     except Exception as e:
-        logger.error(f"Error loading checkpoint weights: {e}")
+        logger.error("Error loading checkpoint weights: %s", e)
         return 1
 
     model.eval()
@@ -721,13 +728,13 @@ def cmd_export(args: argparse.Namespace) -> int:
 
             export_to_torchscript(model, output_path, dummy_input)
         else:
-            logger.error(f"Unknown format '{fmt}'")
+            logger.error("Unknown format '%s'", fmt)
             return 1
     except Exception as e:
-        logger.error(f"Export failed: {e}")
+        logger.error("Export failed: %s", e)
         return 1
 
-    logger.info(f"Successfully exported model to {output_path}")
+    logger.info("Successfully exported model to %s", output_path)
     return 0
 
 
