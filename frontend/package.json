@@ -35,5 +35,10 @@
     "tailwindcss": "^4",
     "typescript": "^7",
     "vitest": "^4.1.10"
+  },
+  "overrides": {
+    "eslint-plugin-jsx-a11y": {
+      "eslint": "$eslint"
+    }
   }
 }
