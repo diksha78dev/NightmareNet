@@ -19,7 +19,10 @@ def test_execute_pipeline_success():
     mock_session_factory = mock.MagicMock()
 
     with mock.patch("nightmarenet.pipeline.Pipeline", mock_pipeline_cls, create=True), \
-         mock.patch("nightmarenet_server.tasks.training._get_session_factory", return_value=mock_session_factory), \
+         mock.patch(
+             "nightmarenet_server.tasks.training._get_session_factory",
+             return_value=mock_session_factory
+         ), \
          mock.patch("nightmarenet_server.tasks.training._persist_event"), \
          mock.patch("nightmarenet_server.tasks.training._update_run_status") as mock_update, \
          mock.patch("nightmarenet_server.tasks.training._broadcast"), \
@@ -41,7 +44,10 @@ def test_execute_pipeline_failure():
     mock_session_factory = mock.MagicMock()
 
     with mock.patch("nightmarenet.pipeline.Pipeline", mock_pipeline_cls, create=True), \
-         mock.patch("nightmarenet_server.tasks.training._get_session_factory", return_value=mock_session_factory), \
+         mock.patch(
+             "nightmarenet_server.tasks.training._get_session_factory",
+             return_value=mock_session_factory
+         ), \
          mock.patch("nightmarenet_server.tasks.training._persist_event"), \
          mock.patch("nightmarenet_server.tasks.training._update_run_status"), \
          mock.patch("nightmarenet_server.tasks.training._broadcast") as mock_broadcast, \
