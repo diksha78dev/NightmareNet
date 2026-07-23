@@ -1,4 +1,5 @@
 import pytest
+
 pytest.importorskip("sqlalchemy")
 
 from nightmarenet_server.models import tables

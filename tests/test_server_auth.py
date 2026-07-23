@@ -2,6 +2,8 @@ from unittest import mock
 
 import pytest
 
+pytest.importorskip("sqlalchemy")
+
 try:
     import jwt
 except ImportError:
