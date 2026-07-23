@@ -3,6 +3,7 @@ import sys
 from unittest import mock
 
 import pytest
+pytest.importorskip("sqlalchemy")
 
 mock_celery = mock.MagicMock()
 sys.modules['celery'] = mock_celery
